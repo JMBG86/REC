@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, send_file
 from src.models.user import db
 from src.models.vehicle import Vehicle, VehicleUpdate, Document
 # Importar diretamente do módulo específico
-from src.models.car_model import CarBrand, CarModel
+from src.models.car_model.car_model import CarBrand, CarModel
 from src.models.store_location import StoreLocation
 from src.routes.auth import token_required
 from datetime import datetime
