@@ -31,10 +31,10 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 
 # Configurar CORS para permitir requests do frontend com credenciais
-# Simplificado já que frontend e backend estão no mesmo servidor
+# Incluindo todos os domínios relevantes para desenvolvimento e produção
 cors = CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-ub72.onrender.com"],
+        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-ub72.onrender.com", "https://rec-frontend.onrender.com", "https://rec-backend.onrender.com"],
         "supports_credentials": True,
         "allow_headers": ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With", "Accept", "Accept-Version", "Content-Length", "Content-MD5", "Date", "X-Api-Version"],
         "expose_headers": ["Content-Type", "Authorization"],
