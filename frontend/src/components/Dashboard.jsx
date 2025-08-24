@@ -70,7 +70,7 @@ export default function PainelDeControlo() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-green-500">DASHBOARD</h1>
+        <h1 className="text-2xl font-bold text-green-500">PAINEL DE CONTROLO</h1>
         <p className="text-muted-foreground">Visão geral do Painel de Controlo do sistema de recuperação de veículos</p>
       </div>
 
