@@ -34,7 +34,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 # Incluindo todos os domínios relevantes para desenvolvimento e produção
 cors = CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-ub72.onrender.com", "https://rec-frontend-uha5.onrender.com"],
+        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-ub72.onrender.com", "https://rec-frontend-uha5.onrender.com", "*"],
         "supports_credentials": True,
         "allow_headers": ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With", "Accept", "Accept-Version", "Content-Length", "Content-MD5", "Date", "X-Api-Version"],
         "expose_headers": ["Content-Type", "Authorization"],
@@ -42,6 +42,15 @@ cors = CORS(app, resources={
         "max_age": 3600
     }
 })
+
+# Adicionar middleware para garantir cabeçalhos CORS em todas as respostas
+@app.after_request
+def add_cors_headers(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 # Adicionar um endpoint de saúde para verificar se o servidor está funcionando
 @app.route('/api/health', methods=['GET', 'OPTIONS'])
