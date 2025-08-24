@@ -91,7 +91,7 @@ export default function Login() {
               <Car className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Sistema de Recuperação</h1>
+          <h1 className="text-3xl font-bold text-gray-900">CarFind</h1>
           <p className="text-gray-600 mt-2">Gestão de Veículos Desaparecidos</p>
         </div>
 
@@ -151,7 +151,7 @@ export default function Login() {
         </Card>
         
         <div className="text-center mt-6 text-sm text-gray-500">
-          <p>Sistema seguro de gestão de veículos</p>
+          <p>CarFind - Sistema seguro de gestão de veículos</p>
         </div>
       </div>
     </div>

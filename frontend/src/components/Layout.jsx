@@ -54,8 +54,8 @@ export default function Layout({ children }) {
           <Car className="h-6 w-6 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="font-bold text-lg">VRS</h1>
-          <p className="text-sm text-muted-foreground">Vehicle Recovery System</p>
+          <h1 className="font-bold text-lg">CarFind</h1>
+          <p className="text-sm text-muted-foreground">Sistema de Gestão de Veículos</p>
         </div>
       </div>
       

@@ -13,6 +13,7 @@ from src.models.user import db
 
 # Importar o módulo models para garantir que todos os modelos sejam carregados na ordem correta
 import src.models
+from src.models.test_model import TestModel  # Importando o modelo de teste
 
 # Importar os blueprints após os modelos
 from src.routes.user import user_bp
@@ -21,6 +22,7 @@ from src.routes.auth import auth_bp
 from src.routes.document import document_bp
 from src.routes.email_trigger import email_trigger_bp
 from src.routes.admin import admin_bp
+from src.routes.test_route import test_bp  # Importando o novo blueprint de teste
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -31,7 +33,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 # Configurar CORS para permitir requests do frontend com credenciais
 cors = CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "https://rec-frontend.vercel.app"],
+        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-frontend.vercel.app"],
         "supports_credentials": True,
         "allow_headers": ["Content-Type", "Authorization"],
         "expose_headers": ["Content-Type", "Authorization"],
@@ -46,10 +48,12 @@ app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(document_bp, url_prefix='/api')
 app.register_blueprint(email_trigger_bp, url_prefix='/api')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(test_bp)  # Registrando o novo blueprint de teste
 
 @app.route('/api/health')
 def health_check():
-    return jsonify({'status': 'ok', 'message': 'API is running'})
+    # Adicionando um comentário de teste para verificar hot-reloading
+    return jsonify({'status': 'ok', 'message': 'API está funcionando corretamente - TESTE HOT RELOAD ATUALIZADO'})
 
 
 # Configuração da base de dados
