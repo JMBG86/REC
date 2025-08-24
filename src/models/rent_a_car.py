@@ -7,9 +7,16 @@ class RentACar(db.Model):
     contacto_email = db.Column(db.String(120), nullable=True)
     contacto_telefone = db.Column(db.String(20), nullable=True)
     endereco = db.Column(db.String(200), nullable=True)
+    cidade = db.Column(db.String(100), nullable=True)
+    codigo_postal = db.Column(db.String(20), nullable=True)
+    pais = db.Column(db.String(50), nullable=True, default='Portugal')
     nif = db.Column(db.String(20), nullable=True)
+    website = db.Column(db.String(200), nullable=True)
+    logo_url = db.Column(db.String(500), nullable=True)
+    descricao = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relacionamento com utilizadores (um rent-a-car pode ter vários utilizadores)
     users = db.relationship('User', backref='rent_a_car', lazy=True)
@@ -24,9 +31,16 @@ class RentACar(db.Model):
             'contacto_email': self.contacto_email,
             'contacto_telefone': self.contacto_telefone,
             'endereco': self.endereco,
+            'cidade': self.cidade,
+            'codigo_postal': self.codigo_postal,
+            'pais': self.pais,
             'nif': self.nif,
+            'website': self.website,
+            'logo_url': self.logo_url,
+            'descricao': self.descricao,
             'is_active': self.is_active,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 class EmailTrigger(db.Model):

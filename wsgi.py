@@ -98,6 +98,8 @@ except ImportError as e:
             print("Módulo store_location carregado manualmente com sucesso!")
             # Adicionar ao sys.modules para futuras importações
             sys.modules["src.models.store_location"] = store_location
+            # Adicionar também como módulo relativo para importações relativas
+            sys.modules["models.store_location"] = store_location
     except Exception as e2:
         print(f"ERRO na importação alternativa: {e2}")
 
