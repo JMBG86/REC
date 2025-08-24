@@ -12,13 +12,13 @@ export default defineConfig(({ command, mode }) => ({
     },
   },
   server: {
-    proxy: command === 'serve' ? {
+    proxy: {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false
       }
-    } : undefined,
+    },
     hmr: {
       overlay: true,
       clientPort: 5173,

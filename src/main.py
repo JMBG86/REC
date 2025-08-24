@@ -33,7 +33,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 # Configurar CORS para permitir requests do frontend com credenciais
 cors = CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-frontend.vercel.app", "https://rec-frontend-uha5.onrender.com"],
+        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-frontend.vercel.app", "https://rec-frontend-uha5.onrender.com", "https://rec-frontend.onrender.com", "https://rec-frontend-new.onrender.com", "*"],
         "supports_credentials": True,
         "allow_headers": ["Content-Type", "Authorization"],
         "expose_headers": ["Content-Type", "Authorization"],
@@ -41,6 +41,12 @@ cors = CORS(app, resources={
         "max_age": 3600
     }
 })
+
+# Adicionar um endpoint de saúde para verificar se o servidor está funcionando
+@app.route('/api/health', methods=['GET', 'OPTIONS'])
+def health_check():
+    return jsonify({"status": "ok", "message": "API está funcionando corretamente"})
+
 
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(vehicle_bp, url_prefix='/api')
@@ -50,10 +56,7 @@ app.register_blueprint(email_trigger_bp, url_prefix='/api')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(test_bp)  # Registrando o novo blueprint de teste
 
-@app.route('/api/health')
-def health_check():
-    # Adicionando um comentário de teste para verificar hot-reloading
-    return jsonify({'status': 'ok', 'message': 'API está funcionando corretamente - TESTE HOT RELOAD ATUALIZADO'})
+# Rota de saúde já definida acima
 
 
 # Configuração da base de dados
