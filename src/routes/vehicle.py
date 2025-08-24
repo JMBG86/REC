@@ -1,9 +1,14 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from src.models.user import db
 from src.models.vehicle import Vehicle, VehicleUpdate, Document
+# Importar diretamente do pacote models
+from src.models import CarBrand, CarModel
+from src.models.store_location import StoreLocation
 from src.routes.auth import token_required
 from datetime import datetime
 import os
+import uuid
+from werkzeug.utils import secure_filename
 
 vehicle_bp = Blueprint('vehicle', __name__)
 
@@ -42,6 +47,10 @@ def create_vehicle(current_user):
         matricula=data['matricula'],
         marca=data['marca'],
         modelo=data['modelo'],
+        # Removendo referências às colunas que não existem
+        # car_brand_id=data.get('car_brand_id'),
+        # car_model_id=data.get('car_model_id'),
+        # store_location_id=data.get('store_location_id'),
         vin=data.get('vin'),
         valor=data.get('valor'),
         nuipc=data.get('nuipc', False),
@@ -88,6 +97,9 @@ def update_vehicle(current_user, vehicle_id):
     
     vehicle.marca = data.get('marca', vehicle.marca)
     vehicle.modelo = data.get('modelo', vehicle.modelo)
+    vehicle.car_brand_id = data.get('car_brand_id', vehicle.car_brand_id)
+    vehicle.car_model_id = data.get('car_model_id', vehicle.car_model_id)
+    vehicle.store_location_id = data.get('store_location_id', vehicle.store_location_id)
     vehicle.vin = data.get('vin', vehicle.vin)
     vehicle.valor = data.get('valor', vehicle.valor)
     vehicle.nuipc = data.get('nuipc', vehicle.nuipc)
@@ -160,31 +172,44 @@ def get_vehicle_by_matricula(current_user, matricula):
 @token_required
 def get_dashboard_stats(current_user):
     """Obter estatísticas para o dashboard"""
-    total_vehicles = Vehicle.query.count()
-    em_tratamento = Vehicle.query.filter_by(status='em_tratamento').count()
-    submetidos = Vehicle.query.filter_by(status='submetido').count()
-    recuperados = Vehicle.query.filter_by(status='recuperado').count()
-    perdidos = Vehicle.query.filter_by(status='perdido').count()
-    
-    # Estatísticas por marca
-    marca_stats = db.session.query(Vehicle.marca, db.func.count(Vehicle.id)).group_by(Vehicle.marca).all()
-    
-    # Estatísticas por loja
-    loja_stats = db.session.query(Vehicle.loja_aluguer, db.func.count(Vehicle.id)).filter(Vehicle.loja_aluguer.isnot(None)).group_by(Vehicle.loja_aluguer).all()
-    
-    # Valor total dos carros em falta (não recuperados)
-    valor_total = db.session.query(db.func.sum(Vehicle.valor)).filter(Vehicle.status != 'recuperado').scalar() or 0
-    
-    return jsonify({
-        'total_vehicles': total_vehicles,
-        'em_tratamento': em_tratamento,
-        'submetidos': submetidos,
-        'recuperados': recuperados,
-        'perdidos': perdidos,
-        'marca_stats': [{'marca': marca, 'count': count} for marca, count in marca_stats],
-        'loja_stats': [{'loja': loja, 'count': count} for loja, count in loja_stats],
-        'valor_total_em_falta': float(valor_total)
-    })
+    try:
+        total_vehicles = Vehicle.query.count()
+        em_tratamento = Vehicle.query.filter_by(status='em_tratamento').count()
+        submetidos = Vehicle.query.filter_by(status='submetido').count()
+        recuperados = Vehicle.query.filter_by(status='recuperado').count()
+        perdidos = Vehicle.query.filter_by(status='perdido').count()
+        
+        # Estatísticas por marca (usando apenas o campo marca para compatibilidade)
+        marca_stats = db.session.query(Vehicle.marca, db.func.count(Vehicle.id)).group_by(Vehicle.marca).all()
+        
+        # Estatísticas por loja (usando apenas o campo loja_aluguer para compatibilidade)
+        loja_stats = db.session.query(Vehicle.loja_aluguer, db.func.count(Vehicle.id)).filter(Vehicle.loja_aluguer.isnot(None)).group_by(Vehicle.loja_aluguer).all()
+        
+        # Valor total dos carros em falta (não recuperados)
+        valor_total = db.session.query(db.func.sum(Vehicle.valor)).filter(Vehicle.status != 'recuperado').scalar() or 0
+        
+        return jsonify({
+            'total_vehicles': total_vehicles,
+            'em_tratamento': em_tratamento,
+            'submetidos': submetidos,
+            'recuperados': recuperados,
+            'perdidos': perdidos,
+            'marca_stats': [{'marca': marca, 'count': count} for marca, count in marca_stats],
+            'loja_stats': [{'loja': loja, 'count': count} for loja, count in loja_stats],
+            'valor_total_em_falta': float(valor_total)
+        })
+    except Exception as e:
+        print(f"Erro ao obter estatísticas do dashboard: {str(e)}")
+        return jsonify({
+            'total_vehicles': 0,
+            'em_tratamento': 0,
+            'submetidos': 0,
+            'recuperados': 0,
+            'perdidos': 0,
+            'marca_stats': [],
+            'loja_stats': [],
+            'valor_total_em_falta': 0
+        }), 500
 
 @vehicle_bp.route('/reports/vehicle/<int:vehicle_id>', methods=['GET'])
 @token_required

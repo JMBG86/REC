@@ -1,6 +1,7 @@
 from src.models.user import db
 from datetime import datetime
-from src.models.car_model import CarBrand, CarModel
+# Importar diretamente do pacote models
+from src.models import CarBrand, CarModel
 from src.models.store_location import StoreLocation
 
 class Vehicle(db.Model):

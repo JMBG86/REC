@@ -13,10 +13,14 @@ from src.routes.vehicle import vehicle_bp
 from src.routes.auth import auth_bp
 from src.routes.document import document_bp
 from src.routes.email_trigger import email_trigger_bp
+from src.routes.admin import admin_bp
 
 # Importar todos os modelos para que sejam criadas as tabelas
 from src.models.vehicle import Vehicle, VehicleUpdate, Document
 from src.models.rent_a_car import RentACar, EmailTrigger
+# Importar diretamente do pacote models
+from src.models import CarBrand, CarModel
+from src.models.store_location import StoreLocation
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -32,6 +36,7 @@ app.register_blueprint(vehicle_bp, url_prefix='/api')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(document_bp, url_prefix='/api')
 app.register_blueprint(email_trigger_bp, url_prefix='/api')
+app.register_blueprint(admin_bp, url_prefix='/api/admin')
 
 # Configuração da base de dados
 # Usar o DATABASE_URL do .env se disponível, caso contrário usar SQLite como fallback
