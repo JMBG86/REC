@@ -70,10 +70,23 @@ def login():
         'exp': datetime.utcnow() + timedelta(hours=24)
     }, current_app.config['SECRET_KEY'], algorithm='HS256')
     
-    return jsonify({
+    # Garantir que o token seja uma string
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+        
+    # Preparar resposta com dados do usuário
+    user_data = user.to_dict()
+    
+    # Garantir que a resposta seja um JSON válido
+    response = jsonify({
         'token': token,
-        'user': user.to_dict()
+        'user': user_data
     })
+    
+    # Definir cabeçalhos explícitos para evitar problemas de CORS
+    response.headers.add('Content-Type', 'application/json')
+    
+    return response
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
