@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de CORS Atualizado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .card {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        pre {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .instructions {
+            background-color: #eaf7fb;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Configuração CORS Atualizada</h1>
+    
+    <div class="instructions">
+        <p><strong>Instruções:</strong></p>
+        <ol>
+            <li>Clique no botão "Executar Testes" para iniciar os testes de CORS</li>
+            <li>Abra o console do navegador (F12) para ver os resultados detalhados</li>
+            <li>Os resultados básicos também serão exibidos nesta página</li>
+        </ol>
+        <p><strong>Nota:</strong> Este teste verifica se os cabeçalhos CORS estão configurados corretamente, incluindo o novo cabeçalho <code>Vary: Origin</code>.</p>
+    </div>
+
+    <div class="card">
+        <h2>Testes Disponíveis</h2>
+        <button id="runAllTests">Executar Todos os Testes</button>
+        <button id="testHealth">Testar Endpoint de Saúde</button>
+        <button id="testPreflight">Testar Preflight CORS</button>
+        <button id="testLogin">Testar Login (CORS)</button>
+    </div>
+
+    <div id="results" class="card">
+        <h2>Resultados</h2>
+        <p>Clique em um dos botões acima para executar os testes.</p>
+        <pre id="resultsOutput"></pre>
+    </div>
+
+    <script src="test_cors_updated.js"></script>
+    <script>
+        // Função para adicionar resultados à página
+        function addResult(message, isSuccess) {
+            const resultsOutput = document.getElementById('resultsOutput');
+            const className = isSuccess ? 'success' : 'error';
+            const icon = isSuccess ? '✅' : '❌';
+            resultsOutput.innerHTML += `<span class="${className}">${icon} ${message}</span>\n`;
+        }
+
+        // Função para limpar resultados
+        function clearResults() {
+            document.getElementById('resultsOutput').innerHTML = '';
+        }
+
+        // Sobrescrever console.log para capturar resultados
+        const originalConsoleLog = console.log;
+        console.log = function(message, ...args) {
+            originalConsoleLog.apply(console, [message, ...args]);
+            
+            // Capturar apenas mensagens de sucesso/falha
+            if (typeof message === 'string' && (message.includes('✅') || message.includes('❌'))) {
+                const isSuccess = message.includes('✅');
+                // Remover formatação de cores do console
+                const cleanMessage = message.replace(/%c/g, '');
+                addResult(cleanMessage, isSuccess);
+            } else if (typeof message === 'string' && message.includes('TODOS OS TESTES PASSARAM')) {
+                addResult(message, true);
+            } else if (typeof message === 'string' && message.includes('ALGUNS TESTES FALHARAM')) {
+                addResult(message, false);
+            }
+        };
+
+        // Adicionar event listeners aos botões
+        document.getElementById('runAllTests').addEventListener('click', () => {
+            clearResults();
+            addResult('Executando todos os testes...', true);
+            runAllTests();
+        });
+
+        document.getElementById('testHealth').addEventListener('click', () => {
+            clearResults();
+            addResult('Testando endpoint de saúde...', true);
+            testHealth();
+        });
+
+        document.getElementById('testPreflight').addEventListener('click', () => {
+            clearResults();
+            addResult('Testando preflight CORS...', true);
+            testPreflight();
+        });
+
+        document.getElementById('testLogin').addEventListener('click', () => {
+            clearResults();
+            addResult('Testando login (CORS)...', true);
+            testLogin();
+        });
+    </script>
+</body>
+</html>
