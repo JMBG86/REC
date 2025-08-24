@@ -7,7 +7,7 @@ Sistema web completo para gestão de veículos desaparecidos de empresas de rent
 ### ✅ Implementadas
 - **Sistema de Autenticação** - Login seguro com JWT
 - **Gestão Completa de Veículos** - CRUD com todos os campos necessários
-- **Dashboard Analítico** - Estatísticas e gráficos em tempo real
+- **Painel de Controlo Analítico** - Estatísticas e gráficos em tempo real
 - **Perfil Detalhado de Veículos** - Timeline e gestão de documentos
 - **Sistema de Utilizadores** - Gestão de acessos
 - **Relatórios** - Interface para geração de relatórios

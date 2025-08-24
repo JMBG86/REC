@@ -52,7 +52,7 @@ O projeto utiliza as seguintes variáveis de ambiente:
 ## Funcionalidades
 
 - Autenticação de usuários
-- Dashboard com estatísticas
+- Painel de Controlo com estatísticas
 - Gerenciamento de veículos
 - Sistema de email triggers
 - Geração de relatórios

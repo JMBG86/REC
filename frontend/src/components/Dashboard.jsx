@@ -37,7 +37,7 @@ export default function PainelDeControlo() {
         setStats(data)
       }
     } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error)
+      console.error('Erro ao carregar estatísticas do Painel de Controlo:', error)
     } finally {
       setLoading(false)
     }
