@@ -13,3 +13,18 @@ services:
         sync: false
       - key: MAX_CONTENT_LENGTH
         fromString: "16777216"  # 16MB em bytes
+
+  - type: web
+    name: rec-frontend
+    env: node
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm run preview -- --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: NODE_VERSION
+        value: "20.11.0"
+      - key: VITE_API_URL
+        value: "https://rec-backend.onrender.com/api"
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://rec-backend.onrender.com/api/:splat

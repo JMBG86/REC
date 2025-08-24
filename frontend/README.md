@@ -28,9 +28,31 @@ Este é o frontend do Sistema de Recuperação de Veículos, uma aplicação web
 
 ### Variáveis de Ambiente
 
-O projeto utiliza as seguintes variáveis de ambiente:
+Crie um arquivo `.env.production` com as seguintes variáveis:
 
-- `VITE_API_BASE`: URL base da API (ex: https://rec-backend.onrender.com/api)
+```
+VITE_API_BASE=https://rec-backend.onrender.com/api
+```
+
+### Deploy no Render.com
+
+O projeto está configurado para ser implantado no Render.com. Siga os passos abaixo para fazer o deploy:
+
+1. Crie uma conta no [Render.com](https://render.com)
+2. Conecte seu repositório GitHub ao Render
+3. Crie um novo Web Service e selecione o repositório
+4. Configure as seguintes opções:
+   - **Nome**: rec-frontend
+   - **Ambiente**: Node
+   - **Build Command**: `cd frontend && npm install && npm run build`
+   - **Start Command**: `cd frontend && npm run preview -- --host 0.0.0.0 --port $PORT`
+   - **Variáveis de Ambiente**:
+     - `NODE_VERSION`: 20.11.0
+     - `VITE_API_BASE`: https://rec-backend.onrender.com/api
+
+5. Clique em "Create Web Service"
+
+O Render irá automaticamente fazer o build e deploy da aplicação. Você pode acessar a aplicação através da URL fornecida pelo Render.
 
 ### Implantação no Vercel
 

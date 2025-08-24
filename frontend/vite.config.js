@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, mode }) => ({
   plugins: [react(),tailwindcss()],
   resolve: {
     alias: {
@@ -23,6 +23,12 @@ export default defineConfig(({ command }) => ({
       overlay: true,
       clientPort: 5173,
       timeout: 1000
-    }
+    },
+    host: '0.0.0.0',
+    port: process.env.PORT || 5173
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: process.env.PORT || 4173
   }
 }))
