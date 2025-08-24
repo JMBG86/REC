@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de Login no Render.com</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .result {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px 0 10px;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        label {
+            font-weight: bold;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .debug-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .test-group {
+            margin-bottom: 30px;
+        }
+        .test-results {
+            margin-top: 20px;
+        }
+        .test-item {
+            margin-bottom: 15px;
+            border-left: 3px solid #3498db;
+            padding-left: 10px;
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .test-title {
+            font-weight: bold;
+        }
+        .test-status {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .status-success {
+            background-color: #27ae60;
+            color: white;
+        }
+        .status-error {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .status-pending {
+            background-color: #f39c12;
+            color: white;
+        }
+        .copy-button {
+            background-color: #7f8c8d;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Diagnóstico de Login no Render.com</h1>
+    <p>Esta página realiza testes completos para diagnosticar problemas de login na API do Render.com.</p>
+    
+    <div class="container">
+        <h2>Configurações</h2>
+        <div>
+            <label for="baseUrl">URL Base da API:</label>
+            <input type="text" id="baseUrl" value="/api" />
+        </div>
+        <div>
+            <label for="username">Usuário:</label>
+            <input type="text" id="username" value="admin" />
+        </div>
+        <div>
+            <label for="password">Senha:</label>
+            <input type="password" id="password" value="admin" />
+        </div>
+        <div>
+            <label for="testMode">Modo de Teste:</label>
+            <select id="testMode">
+                <option value="all">Todos os Testes</option>
+                <option value="health">Apenas Teste de Saúde</option>
+                <option value="login">Apenas Teste de Login</option>
+                <option value="cors">Apenas Teste de CORS</option>
+                <option value="routes">Apenas Teste de Rotas</option>
+            </select>
+        </div>
+        <button onclick="runAllTests()">Executar Testes</button>
+        <button onclick="copyResults()" class="copy-button">Copiar Resultados</button>
+    </div>
+
+    <div class="container">
+        <h2>Informações do Ambiente</h2>
+        <div id="environmentInfo" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>Resultados dos Testes</h2>
+        <div id="testResults" class="test-results"></div>
+    </div>
+
+    <script>
+        // Função para escapar HTML para exibição segura
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Função para formatar objetos JSON para exibição
+        function formatJson(obj) {
+            try {
+                return JSON.stringify(obj, null, 2);
+            } catch (e) {
+                return String(obj);
+            }
+        }
+
+        // Função para copiar resultados para a área de transferência
+        function copyResults() {
+            const results = document.getElementById('testResults');
+            const textToCopy = results.innerText;
+            
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    alert('Resultados copiados para a área de transferência!');
+                })
+                .catch(err => {
+                    console.error('Erro ao copiar texto: ', err);
+                    alert('Não foi possível copiar os resultados. Tente selecionar e copiar manualmente.');
+                });
+        }
+
+        // Função para exibir informações do ambiente
+        function showEnvironmentInfo() {
+            const envInfo = document.getElementById('environmentInfo');
+            const info = {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                cookiesEnabled: navigator.cookieEnabled,
+                currentUrl: window.location.href,
+                protocol: window.location.protocol,
+                host: window.location.host,
+                pathname: window.location.pathname,
+                referrer: document.referrer || 'Nenhum',
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                connectionType: navigator.connection ? navigator.connection.effectiveType : 'Desconhecido',
+                timestamp: new Date().toISOString()
+            };
+            
+            envInfo.innerHTML = formatJson(info);
+        }
+
+        // Função para adicionar um resultado de teste
+        function addTestResult(title, status, details) {
+            const testResults = document.getElementById('testResults');
+            const testItem = document.createElement('div');
+            testItem.className = 'test-item';
+            
+            const testHeader = document.createElement('div');
+            testHeader.className = 'test-header';
+            
+            const testTitle = document.createElement('div');
+            testTitle.className = 'test-title';
+            testTitle.textContent = title;
+            
+            const testStatus = document.createElement('div');
+            testStatus.className = `test-status status-${status}`;
+            testStatus.textContent = status === 'success' ? 'SUCESSO' : status === 'error' ? 'ERRO' : 'PENDENTE';
+            
+            testHeader.appendChild(testTitle);
+            testHeader.appendChild(testStatus);
+            
+            const testDetails = document.createElement('div');
+            testDetails.className = 'result';
+            testDetails.innerHTML = details;
+            
+            testItem.appendChild(testHeader);
+            testItem.appendChild(testDetails);
+            
+            testResults.appendChild(testItem);
+            
+            return { testItem, testDetails };
+        }
+
+        // Função para testar a saúde da API
+        async function testHealth() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const healthUrl = `${baseUrl}/health`;
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch(healthUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                let responseText = '';
+                let responseJson = {};
+                
+                try {
+                    responseText = await response.text();
+                    try {
+                        responseJson = JSON.parse(responseText);
+                    } catch (e) {
+                        // Não é JSON válido, usar o texto como está
+                    }
+                } catch (e) {
+                    responseText = 'Não foi possível ler o corpo da resposta';
+                }
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                const details = `
+                    <p><strong>URL:</strong> ${healthUrl}</p>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Tempo de Resposta:</strong> ${responseTime}ms</p>
+                    <p><strong>Headers:</strong></p>
+                    <pre>${escapeHtml(formatJson(headers))}</pre>
+                    <p><strong>Corpo da Resposta (Texto):</strong></p>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${typeof responseJson === 'object' ? `
+                    <p><strong>Corpo da Resposta (JSON):</strong></p>
+                    <pre>${escapeHtml(formatJson(responseJson))}</pre>
+                    ` : ''}
+                `;
+                
+                const status = response.ok ? 'success' : 'error';
+                return addTestResult('Teste de Saúde da API', status, details);
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                const details = `
+                    <p><strong>URL:</strong> ${healthUrl}</p>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p><strong>Tempo:</strong> ${responseTime}ms</p>
+                    <p><strong>Stack:</strong></p>
+                    <pre>${escapeHtml(error.stack)}</pre>
+                `;
+                
+                return addTestResult('Teste de Saúde da API', 'error', details);
+            }
+        }
+
+        // Função para testar o login
+        async function testLogin() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginUrl = `${baseUrl}/auth/login`;
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch(loginUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
+                });
+                
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                let responseText = '';
+                let responseJson = {};
+                
+                try {
+                    responseText = await response.text();
+                    try {
+                        responseJson = JSON.parse(responseText);
+                    } catch (e) {
+                        // Não é JSON válido, usar o texto como está
+                    }
+                } catch (e) {
+                    responseText = 'Não foi possível ler o corpo da resposta';
+                }
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                const details = `
+                    <p><strong>URL:</strong> ${loginUrl}</p>
+                    <p><strong>Método:</strong> POST</p>
+                    <p><strong>Credenciais:</strong> ${username}:${password.replace(/./g, '*')}</p>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Tempo de Resposta:</strong> ${responseTime}ms</p>
+                    <p><strong>Headers:</strong></p>
+                    <pre>${escapeHtml(formatJson(headers))}</pre>
+                    <p><strong>Corpo da Requisição:</strong></p>
+                    <pre>${escapeHtml(formatJson({ username, password: '********' }))}</pre>
+                    <p><strong>Corpo da Resposta (Texto):</strong></p>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${typeof responseJson === 'object' ? `
+                    <p><strong>Corpo da Resposta (JSON):</strong></p>
+                    <pre>${escapeHtml(formatJson(responseJson))}</pre>
+                    ` : ''}
+                `;
+                
+                const status = response.ok ? 'success' : 'error';
+                return addTestResult('Teste de Login', status, details);
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                const details = `
+                    <p><strong>URL:</strong> ${loginUrl}</p>
+                    <p><strong>Método:</strong> POST</p>
+                    <p><strong>Credenciais:</strong> ${username}:${password.replace(/./g, '*')}</p>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p><strong>Tempo:</strong> ${responseTime}ms</p>
+                    <p><strong>Stack:</strong></p>
+                    <pre>${escapeHtml(error.stack)}</pre>
+                `;
+                
+                return addTestResult('Teste de Login', 'error', details);
+            }
+        }
+
+        // Função para testar login com URL completa
+        async function testLoginWithFullUrl() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Construir URL completa baseada na localização atual
+            const currentUrl = window.location.origin;
+            const loginUrl = `${currentUrl}${baseUrl}/auth/login`;
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch(loginUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
+                });
+                
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                let responseText = '';
+                let responseJson = {};
+                
+                try {
+                    responseText = await response.text();
+                    try {
+                        responseJson = JSON.parse(responseText);
+                    } catch (e) {
+                        // Não é JSON válido, usar o texto como está
+                    }
+                } catch (e) {
+                    responseText = 'Não foi possível ler o corpo da resposta';
+                }
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                const details = `
+                    <p><strong>URL:</strong> ${loginUrl}</p>
+                    <p><strong>Método:</strong> POST</p>
+                    <p><strong>Credenciais:</strong> ${username}:${password.replace(/./g, '*')}</p>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Tempo de Resposta:</strong> ${responseTime}ms</p>
+                    <p><strong>Headers:</strong></p>
+                    <pre>${escapeHtml(formatJson(headers))}</pre>
+                    <p><strong>Corpo da Requisição:</strong></p>
+                    <pre>${escapeHtml(formatJson({ username, password: '********' }))}</pre>
+                    <p><strong>Corpo da Resposta (Texto):</strong></p>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${typeof responseJson === 'object' ? `
+                    <p><strong>Corpo da Resposta (JSON):</strong></p>
+                    <pre>${escapeHtml(formatJson(responseJson))}</pre>
+                    ` : ''}
+                `;
+                
+                const status = response.ok ? 'success' : 'error';
+                return addTestResult('Teste de Login com URL Completa', status, details);
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                const details = `
+                    <p><strong>URL:</strong> ${loginUrl}</p>
+                    <p><strong>Método:</strong> POST</p>
+                    <p><strong>Credenciais:</strong> ${username}:${password.replace(/./g, '*')}</p>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p><strong>Tempo:</strong> ${responseTime}ms</p>
+                    <p><strong>Stack:</strong></p>
+                    <pre>${escapeHtml(error.stack)}</pre>
+                `;
+                
+                return addTestResult('Teste de Login com URL Completa', 'error', details);
+            }
+        }
+
+        // Função para testar login com XMLHttpRequest
+        function testLoginWithXHR() {
+            return new Promise((resolve) => {
+                const baseUrl = document.getElementById('baseUrl').value;
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const loginUrl = `${baseUrl}/auth/login`;
+                const startTime = performance.now();
+                
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', loginUrl, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Accept', 'application/json');
+                xhr.withCredentials = true;
+                
+                xhr.onload = function() {
+                    const endTime = performance.now();
+                    const responseTime = (endTime - startTime).toFixed(2);
+                    
+                    let responseText = xhr.responseText;
+                    let responseJson = {};
+                    
+                    try {
+                        responseJson = JSON.parse(responseText);
+                    } catch (e) {
+                        // Não é JSON válido, usar o texto como está
+                    }
+                    
+                    const headers = {};
+                    const headerLines = xhr.getAllResponseHeaders().split('\r\n');
+                    for (const line of headerLines) {
+                        if (line) {
+                            const parts = line.split(': ');
+                            headers[parts[0]] = parts[1];
+                        }
+                    }
+                    
+                    const details = `
+                        <p><strong>URL:</strong> ${loginUrl}</p>
+                        <p><strong>Método:</strong> POST (XHR)</p>
+                        <p><strong>Credenciais:</strong> ${username}:${password.replace(/./g, '*')}</p>
+                        <p><strong>Status:</strong> ${xhr.status} ${xhr.statusText}</p>
+                        <p><strong>Tempo de Resposta:</strong> ${responseTime}ms</p>
+                        <p><strong>Headers:</strong></p>
+                        <pre>${escapeHtml(formatJson(headers))}</pre>
+                        <p><strong>Corpo da Requisição:</strong></p>
+                        <pre>${escapeHtml(formatJson({ username, password: '********' }))}</pre>
+                        <p><strong>Corpo da Resposta (Texto):</strong></p>
+                        <pre>${escapeHtml(responseText)}</pre>
+                        ${typeof responseJson === 'object' ? `
+                        <p><strong>Corpo da Resposta (JSON):</strong></p>
+                        <pre>${escapeHtml(formatJson(responseJson))}</pre>
+                        ` : ''}
+                    `;
+                    
+                    const status = xhr.status >= 200 && xhr.status < 300 ? 'success' : 'error';
+                    resolve(addTestResult('Teste de Login com XMLHttpRequest', status, details));
+                };
+                
+                xhr.onerror = function(error) {
+                    const endTime = performance.now();
+                    const responseTime = (endTime - startTime).toFixed(2);
+                    
+                    const details = `
+                        <p><strong>URL:</strong> ${loginUrl}</p>
+                        <p><strong>Método:</strong> POST (XHR)</p>
+                        <p><strong>Credenciais:</strong> ${username}:${password.replace(/./g, '*')}</p>
+                        <p><strong>Erro:</strong> Erro de rede</p>
+                        <p><strong>Tempo:</strong> ${responseTime}ms</p>
+                        <p><strong>Status:</strong> ${xhr.status} ${xhr.statusText}</p>
+                    `;
+                    
+                    resolve(addTestResult('Teste de Login com XMLHttpRequest', 'error', details));
+                };
+                
+                xhr.send(JSON.stringify({ username, password }));
+            });
+        }
+
+        // Função para testar CORS com preflight OPTIONS
+        async function testCORSPreflight() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const loginUrl = `${baseUrl}/auth/login`;
+            const startTime = performance.now();
+            
+            try {
+                // Simular uma requisição OPTIONS para verificar o CORS
+                const response = await fetch(loginUrl, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Accept',
+                        'Origin': window.location.origin
+                    }
+                });
+                
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials'),
+                    'Access-Control-Max-Age': response.headers.get('Access-Control-Max-Age')
+                };
+                
+                const details = `
+                    <p><strong>URL:</strong> ${loginUrl}</p>
+                    <p><strong>Método:</strong> OPTIONS</p>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Tempo de Resposta:</strong> ${responseTime}ms</p>
+                    <p><strong>Headers de Requisição:</strong></p>
+                    <pre>${escapeHtml(formatJson({
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Accept',
+                        'Origin': window.location.origin
+                    }))}</pre>
+                    <p><strong>Headers CORS na Resposta:</strong></p>
+                    <pre>${escapeHtml(formatJson(corsHeaders))}</pre>
+                    <p><strong>Todos os Headers:</strong></p>
+                    <pre>${escapeHtml(formatJson(headers))}</pre>
+                `;
+                
+                // Verificar se os headers CORS estão presentes e corretos
+                const hasValidCORS = (
+                    corsHeaders['Access-Control-Allow-Origin'] && 
+                    corsHeaders['Access-Control-Allow-Methods'] && 
+                    corsHeaders['Access-Control-Allow-Methods'].includes('POST')
+                );
+                
+                const status = hasValidCORS ? 'success' : 'error';
+                return addTestResult('Teste de CORS Preflight', status, details);
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                const details = `
+                    <p><strong>URL:</strong> ${loginUrl}</p>
+                    <p><strong>Método:</strong> OPTIONS</p>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p><strong>Tempo:</strong> ${responseTime}ms</p>
+                    <p><strong>Stack:</strong></p>
+                    <pre>${escapeHtml(error.stack)}</pre>
+                `;
+                
+                return addTestResult('Teste de CORS Preflight', 'error', details);
+            }
+        }
+
+        // Função para testar rotas alternativas
+        async function testAlternativeRoutes() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Lista de rotas alternativas para testar
+            const routes = [
+                { name: 'Rota Padrão', path: `${baseUrl}/auth/login` },
+                { name: 'Rota Sem /api', path: `/auth/login` },
+                { name: 'Rota com URL Completa', path: `${window.location.origin}${baseUrl}/auth/login` },
+                { name: 'Rota Backend Direta', path: `https://rec-ub72.onrender.com/api/auth/login` }
+            ];
+            
+            const results = [];
+            
+            for (const route of routes) {
+                const startTime = performance.now();
+                
+                try {
+                    const response = await fetch(route.path, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password }),
+                        credentials: 'include'
+                    });
+                    
+                    const endTime = performance.now();
+                    const responseTime = (endTime - startTime).toFixed(2);
+                    
+                    let responseText = '';
+                    let responseJson = {};
+                    
+                    try {
+                        responseText = await response.text();
+                        try {
+                            responseJson = JSON.parse(responseText);
+                        } catch (e) {
+                            // Não é JSON válido, usar o texto como está
+                        }
+                    } catch (e) {
+                        responseText = 'Não foi possível ler o corpo da resposta';
+                    }
+                    
+                    const headers = {};
+                    response.headers.forEach((value, key) => {
+                        headers[key] = value;
+                    });
+                    
+                    const details = `
+                        <p><strong>URL:</strong> ${route.path}</p>
+                        <p><strong>Método:</strong> POST</p>
+                        <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                        <p><strong>Tempo de Resposta:</strong> ${responseTime}ms</p>
+                        <p><strong>Headers:</strong></p>
+                        <pre>${escapeHtml(formatJson(headers))}</pre>
+                        <p><strong>Corpo da Resposta (Texto):</strong></p>
+                        <pre>${escapeHtml(responseText)}</pre>
+                        ${typeof responseJson === 'object' ? `
+                        <p><strong>Corpo da Resposta (JSON):</strong></p>
+                        <pre>${escapeHtml(formatJson(responseJson))}</pre>
+                        ` : ''}
+                    `;
+                    
+                    const status = response.ok ? 'success' : 'error';
+                    results.push(addTestResult(`Teste de Rota: ${route.name}`, status, details));
+                } catch (error) {
+                    const endTime = performance.now();
+                    const responseTime = (endTime - startTime).toFixed(2);
+                    
+                    const details = `
+                        <p><strong>URL:</strong> ${route.path}</p>
+                        <p><strong>Método:</strong> POST</p>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p><strong>Tempo:</strong> ${responseTime}ms</p>
+                        <p><strong>Stack:</strong></p>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    `;
+                    
+                    results.push(addTestResult(`Teste de Rota: ${route.name}`, 'error', details));
+                }
+            }
+            
+            return results;
+        }
+
+        // Função para executar todos os testes
+        async function runAllTests() {
+            // Limpar resultados anteriores
+            document.getElementById('testResults').innerHTML = '';
+            
+            // Mostrar informações do ambiente
+            showEnvironmentInfo();
+            
+            const testMode = document.getElementById('testMode').value;
+            
+            // Executar testes com base no modo selecionado
+            if (testMode === 'all' || testMode === 'health') {
+                await testHealth();
+            }
+            
+            if (testMode === 'all' || testMode === 'login') {
+                await testLogin();
+                await testLoginWithFullUrl();
+                await testLoginWithXHR();
+            }
+            
+            if (testMode === 'all' || testMode === 'cors') {
+                await testCORSPreflight();
+            }
+            
+            if (testMode === 'all' || testMode === 'routes') {
+                await testAlternativeRoutes();
+            }
+        }
+
+        // Inicializar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            showEnvironmentInfo();
+        });
+    </script>
+</body>
+</html>
