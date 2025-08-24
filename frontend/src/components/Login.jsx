@@ -25,13 +25,18 @@ export default function Login() {
     setLoading(true)
     setError('')
 
-    const result = await login(username, password)
-    
-    if (!result.success) {
-      setError(result.error)
+    try {
+      const result = await login(username, password)
+      
+      if (!result.success) {
+        setError(result.error || 'Falha na autenticação. Tente novamente.')
+      }
+    } catch (err) {
+      console.error('Erro no processo de login:', err)
+      setError('Erro inesperado. Tente novamente mais tarde.')
+    } finally {
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   return (

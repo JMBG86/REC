@@ -21,12 +21,14 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (token) {
       // Verificar se o token é válido
+      console.log('Verificando token em:', `${API_BASE}/auth/me`)
       fetch(`${API_BASE}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
       .then(response => {
+        console.log('Resposta da verificação do token:', response.status)
         if (response.ok) {
           return response.json()
         } else {
@@ -34,9 +36,11 @@ export function AuthProvider({ children }) {
         }
       })
       .then(userData => {
+        console.log('Dados do usuário recebidos')
         setUser(userData)
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Erro na verificação do token:', error)
         localStorage.removeItem('token')
         setToken(null)
       })
@@ -46,10 +50,11 @@ export function AuthProvider({ children }) {
     } else {
       setLoading(false)
     }
-  }, [token])
+  }, [token, API_BASE])
 
   const login = async (username, password) => {
     try {
+      console.log('Tentando login em:', `${API_BASE}/auth/login`)
       const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: {
@@ -58,6 +63,8 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ username, password })
       })
 
+      console.log('Resposta do login:', response.status)
+      
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Erro no login')
@@ -69,6 +76,7 @@ export function AuthProvider({ children }) {
       setUser(data.user)
       return { success: true }
     } catch (error) {
+      console.error('Erro durante login:', error)
       return { success: false, error: error.message }
     }
   }
