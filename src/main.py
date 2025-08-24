@@ -34,7 +34,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 # Incluindo todos os domínios relevantes para desenvolvimento e produção
 cors = CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-ub72.onrender.com", "https://rec-frontend.onrender.com", "https://rec-backend.onrender.com"],
+        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-ub72.onrender.com", "https://rec-frontend-uha5.onrender.com"],
         "supports_credentials": True,
         "allow_headers": ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With", "Accept", "Accept-Version", "Content-Length", "Content-MD5", "Date", "X-Api-Version"],
         "expose_headers": ["Content-Type", "Authorization"],
