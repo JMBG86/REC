@@ -11,12 +11,14 @@ import {
   LogOut, 
   Menu,
   Plus,
-  Search
+  Search,
+  Mail
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Veículos', href: '/vehicles', icon: Car },
+  { name: 'Email Triggers', href: '/email-triggers', icon: Mail },
   { name: 'Relatórios', href: '/reports', icon: FileText },
   { name: 'Utilizadores', href: '/users', icon: Users },
 ]

@@ -10,6 +10,7 @@ import VehicleDetail from './components/VehicleDetail'
 import VehicleForm from './components/VehicleForm'
 import Reports from './components/Reports'
 import Users from './components/Users'
+import EmailTriggers from './components/EmailTriggers'
 import Layout from './components/Layout'
 
 // Context para autenticação
@@ -81,6 +82,13 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Users />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/email-triggers" element={
+              <ProtectedRoute>
+                <Layout>
+                  <EmailTriggers />
                 </Layout>
               </ProtectedRoute>
             } />

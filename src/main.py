@@ -10,6 +10,7 @@ from src.routes.user import user_bp
 from src.routes.vehicle import vehicle_bp
 from src.routes.auth import auth_bp
 from src.routes.document import document_bp
+from src.routes.email_trigger import email_trigger_bp
 
 # Importar todos os modelos para que sejam criadas as tabelas
 from src.models.vehicle import Vehicle, VehicleUpdate, Document
@@ -25,6 +26,7 @@ app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(vehicle_bp, url_prefix='/api')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(document_bp, url_prefix='/api')
+app.register_blueprint(email_trigger_bp, url_prefix='/api')
 
 # Configuração da base de dados
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
