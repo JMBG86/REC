@@ -39,43 +39,18 @@ export default function Login() {
     setError('')
     
     console.log('Iniciando processo de login')
-    console.log('Credenciais:', { username, password: '***' })
-    console.log('URL completa de login:', `${API_BASE}/auth/login`)
-
+    
     try {
-      // Verificar se a API está acessível antes de tentar login
-      console.log('Verificando CORS e disponibilidade da API...')
-      try {
-        // Adiciona timestamp para evitar cache
-        const timestamp = new Date().getTime()
-        const preflightCheck = await fetch(`${API_BASE}/auth/login?_=${timestamp}`, { 
-          method: 'OPTIONS',
-          headers: {
-            'Access-Control-Request-Method': 'POST',
-            'Access-Control-Request-Headers': 'Content-Type, Authorization'
-          },
-          credentials: 'include',
-          mode: 'cors'
-        })
-        console.log('Resposta do preflight:', preflightCheck.status, preflightCheck.statusText)
-        console.log('Headers do preflight:', [...preflightCheck.headers.entries()])
-      } catch (preflightErr) {
-        console.error('Erro no preflight CORS:', preflightErr)
-      }
-      
       console.log('Enviando requisição de login...')
       const result = await login(username, password)
-      console.log('Resultado do login:', result)
       
       if (!result.success) {
-        console.error('Falha no login:', result.error)
         setError(result.error || 'Falha na autenticação. Tente novamente.')
       } else {
         console.log('Login bem-sucedido!')
       }
     } catch (err) {
       console.error('Erro no processo de login:', err)
-      console.error('Detalhes do erro:', err.message, err.stack)
       setError('Erro inesperado. Tente novamente mais tarde.')
     } finally {
       setLoading(false)

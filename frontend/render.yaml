@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: rec-frontend
+    env: static
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "20.11.0"
+    headers:
+      - path: /api/(.*)
+        name: Access-Control-Allow-Origin
+        value: "https://rec-ub72.onrender.com"
+      - path: /api/(.*)
+        name: Access-Control-Allow-Methods
+        value: "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+      - path: /api/(.*)
+        name: Access-Control-Allow-Headers
+        value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
+      - path: /api/(.*)
+        name: Access-Control-Allow-Credentials
+        value: "true"
+    routes:
+      - type: rewrite
+        source: /api/(.*)
+        destination: https://rec-ub72.onrender.com/api/$1
+      - type: rewrite
+        source: /*
+        destination: /index.html

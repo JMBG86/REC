@@ -46,19 +46,11 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     try {
       setApiError(null) // Limpa erros anteriores
-      console.log('Tentando login...')
-      console.log('Ambiente:', import.meta.env.MODE)
-      
-      const startTime = performance.now()
       
       const data = await apiRequest('auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password })
       })
-      
-      const endTime = performance.now()
-      console.log(`Login completado em ${endTime - startTime}ms`)
-      console.log('Login bem-sucedido')
       
       localStorage.setItem('token', data.token)
       setToken(data.token)

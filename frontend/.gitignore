@@ -1,1 +1,3 @@
 .vercel
+.vercelignore
+vercel.json

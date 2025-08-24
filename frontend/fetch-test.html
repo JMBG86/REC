@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Fetch para API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        input, select {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Fetch para API</h1>
+    <p>Esta página testa a comunicação com o backend usando diferentes configurações.</p>
+    
+    <div class="form-group">
+        <label for="apiUrl">URL da API:</label>
+        <input type="text" id="apiUrl" value="https://rec-ub72.onrender.com/api" />
+    </div>
+    
+    <div class="form-group">
+        <label for="endpoint">Endpoint:</label>
+        <select id="endpoint">
+            <option value="health">Health Check (/health)</option>
+            <option value="auth/login">Login (/auth/login)</option>
+        </select>
+    </div>
+    
+    <div id="loginForm" style="display: none;">
+        <div class="form-group">
+            <label for="username">Nome de usuário:</label>
+            <input type="text" id="username" value="admin" />
+        </div>
+        <div class="form-group">
+            <label for="password">Senha:</label>
+            <input type="password" id="password" value="admin" />
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="fetchMode">Modo de Fetch:</label>
+        <select id="fetchMode">
+            <option value="default">Padrão</option>
+            <option value="cors">CORS</option>
+            <option value="no-cors">No-CORS</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="credentials">Credentials:</label>
+        <select id="credentials">
+            <option value="same-origin">same-origin</option>
+            <option value="include">include</option>
+            <option value="omit">omit</option>
+        </select>
+    </div>
+    
+    <div>
+        <button id="testFetch">Testar Fetch</button>
+        <button id="testOptions">Testar OPTIONS (Preflight)</button>
+        <button id="clearResults">Limpar Resultados</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        document.getElementById('endpoint').addEventListener('change', function() {
+            const loginForm = document.getElementById('loginForm');
+            loginForm.style.display = this.value === 'auth/login' ? 'block' : 'none';
+        });
+        
+        document.getElementById('clearResults').addEventListener('click', function() {
+            document.getElementById('results').innerHTML = '';
+        });
+        
+        document.getElementById('testFetch').addEventListener('click', async function() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const endpoint = document.getElementById('endpoint').value;
+            const fetchMode = document.getElementById('fetchMode').value;
+            const credentials = document.getElementById('credentials').value;
+            const url = `${apiUrl}/${endpoint}`;
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `<h3>Teste de Fetch</h3><p>URL: ${url}</p><p>Modo: ${fetchMode}, Credentials: ${credentials}</p>`;
+            
+            try {
+                const options = {
+                    method: endpoint === 'auth/login' ? 'POST' : 'GET',
+                    mode: fetchMode === 'default' ? undefined : fetchMode,
+                    credentials: credentials,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                };
+                
+                if (endpoint === 'auth/login') {
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    options.body = JSON.stringify({ username, password });
+                }
+                
+                console.log('Fetch options:', options);
+                
+                const timestamp = new Date().getTime();
+                const response = await fetch(`${url}?_=${timestamp}`, options);
+                
+                const responseHeaders = {};
+                response.headers.forEach((value, key) => {
+                    responseHeaders[key] = value;
+                });
+                
+                let responseData;
+                try {
+                    responseData = await response.json();
+                } catch (e) {
+                    responseData = await response.text();
+                }
+                
+                resultDiv.classList.add('success');
+                resultDiv.innerHTML += `
+                    <p>Status: ${response.status} ${response.statusText}</p>
+                    <h4>Headers:</h4>
+                    <pre>${JSON.stringify(responseHeaders, null, 2)}</pre>
+                    <h4>Resposta:</h4>
+                    <pre>${typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.classList.add('error');
+                resultDiv.innerHTML += `
+                    <p>Erro: ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+            
+            document.getElementById('results').prepend(resultDiv);
+        });
+        
+        document.getElementById('testOptions').addEventListener('click', async function() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const endpoint = document.getElementById('endpoint').value;
+            const fetchMode = document.getElementById('fetchMode').value;
+            const credentials = document.getElementById('credentials').value;
+            const url = `${apiUrl}/${endpoint}`;
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `<h3>Teste de OPTIONS (Preflight)</h3><p>URL: ${url}</p><p>Modo: ${fetchMode}, Credentials: ${credentials}</p>`;
+            
+            try {
+                const timestamp = new Date().getTime();
+                const response = await fetch(`${url}?_=${timestamp}`, {
+                    method: 'OPTIONS',
+                    mode: fetchMode === 'default' ? undefined : fetchMode,
+                    credentials: credentials,
+                    headers: {
+                        'Access-Control-Request-Method': endpoint === 'auth/login' ? 'POST' : 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                
+                const responseHeaders = {};
+                response.headers.forEach((value, key) => {
+                    responseHeaders[key] = value;
+                });
+                
+                resultDiv.classList.add('success');
+                resultDiv.innerHTML += `
+                    <p>Status: ${response.status} ${response.statusText}</p>
+                    <h4>Headers:</h4>
+                    <pre>${JSON.stringify(responseHeaders, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.classList.add('error');
+                resultDiv.innerHTML += `
+                    <p>Erro: ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+            
+            document.getElementById('results').prepend(resultDiv);
+        });
+    </script>
+</body>
+</html>

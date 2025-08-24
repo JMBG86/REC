@@ -76,9 +76,26 @@ O frontend está configurado para deploy como Static Site no Render.com:
 O backend está configurado para aceitar requisições CORS dos seguintes domínios:
 - http://localhost:3000 (desenvolvimento local React)
 - http://localhost:5173 (desenvolvimento local Vite)
-- https://rec-frontend.vercel.app
-- https://rec-frontend-uha5.onrender.com
 - https://rec-frontend.onrender.com
+- https://rec-ub72.onrender.com
 
 Se você estiver usando um domínio diferente, adicione-o à lista de origens permitidas no arquivo `src/main.py`.
+
+### Scripts de Deploy
+Foram criados scripts para facilitar o processo de deploy no Render.com:
+
+- **deploy-render.sh** - Para sistemas Unix/Linux/macOS
+- **deploy-render.ps1** - Para sistemas Windows
+
+Para usar o script no Windows, execute no PowerShell:
+```powershell
+.\deploy-render.ps1
+```
+
+### Sistema de Login Simplificado
+O sistema de login foi otimizado para:
+- Usar a URL correta da API em produção e desenvolvimento
+- Remover verificações redundantes de CORS
+- Melhorar o desempenho reduzindo logs desnecessários
+- Aumentar a segurança com cabeçalhos CORS específicos
 

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Conexão com API (Novo Frontend)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+            white-space: pre-wrap;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Conexão com API (Novo Frontend)</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="openTab(event, 'direct-test')">Teste Direto</div>
+        <div class="tab" onclick="openTab(event, 'proxy-test')">Teste com Proxy</div>
+        <div class="tab" onclick="openTab(event, 'debug-info')">Informações de Debug</div>
+    </div>
+    
+    <div id="direct-test" class="tab-content active">
+        <h2>Teste Direto com a API</h2>
+        <p>Este teste faz uma requisição direta para a API do backend.</p>
+        
+        <div>
+            <h3>URL da API</h3>
+            <input type="text" id="directApiUrl" value="https://rec-ub72.onrender.com/api/health" />
+        </div>
+
+        <div>
+            <h3>Ações</h3>
+            <button onclick="testDirectConnection()">Testar Conexão Direta</button>
+            <button onclick="testDirectOptions()">Testar OPTIONS Direto</button>
+        </div>
+
+        <div>
+            <h3>Resultado</h3>
+            <div id="directResult" class="result">Os resultados aparecerão aqui...</div>
+        </div>
+    </div>
+    
+    <div id="proxy-test" class="tab-content">
+        <h2>Teste com Proxy</h2>
+        <p>Este teste faz uma requisição através do proxy configurado no frontend.</p>
+        
+        <div>
+            <h3>URL da API (via Proxy)</h3>
+            <input type="text" id="proxyApiUrl" value="/api/health" />
+        </div>
+
+        <div>
+            <h3>Ações</h3>
+            <button onclick="testProxyConnection()">Testar Conexão via Proxy</button>
+            <button onclick="testProxyOptions()">Testar OPTIONS via Proxy</button>
+        </div>
+
+        <div>
+            <h3>Resultado</h3>
+            <div id="proxyResult" class="result">Os resultados aparecerão aqui...</div>
+        </div>
+    </div>
+    
+    <div id="debug-info" class="tab-content">
+        <h2>Informações de Debug</h2>
+        
+        <div>
+            <h3>Informações do Navegador</h3>
+            <div id="browserInfo" class="result">Carregando...</div>
+        </div>
+        
+        <div>
+            <h3>Informações do Ambiente</h3>
+            <div id="envInfo" class="result">Carregando...</div>
+        </div>
+        
+        <div>
+            <h3>Teste de CORS</h3>
+            <button onclick="testCors()">Verificar Suporte a CORS</button>
+            <div id="corsResult" class="result">Clique no botão para testar...</div>
+        </div>
+    </div>
+
+    <script>
+        // Função para alternar entre abas
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        
+        // Função para exibir resultados
+        function showResult(elementId, message, data = null) {
+            const resultElement = document.getElementById(elementId);
+            let content = message;
+            
+            if (data) {
+                if (typeof data === 'object') {
+                    content += '\n\n' + JSON.stringify(data, null, 2);
+                } else {
+                    content += '\n\n' + data;
+                }
+            }
+            
+            resultElement.textContent = content;
+        }
+
+        // Função para testar conexão direta
+        async function testDirectConnection() {
+            const apiUrl = document.getElementById('directApiUrl').value;
+            showResult('directResult', `Testando conexão direta com ${apiUrl}...`);
+            
+            try {
+                console.log('Iniciando fetch direto para:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    mode: 'cors',
+                    credentials: 'include'
+                });
+                
+                console.log('Resposta direta recebida:', response);
+                
+                const responseData = await response.json();
+                
+                // Exibir todos os headers da resposta
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                showResult('directResult', `Conexão direta bem-sucedida! Status: ${response.status}`, {
+                    data: responseData,
+                    headers: headers
+                });
+                
+                console.log('Headers da resposta direta:', headers);
+            } catch (error) {
+                console.error('Erro na conexão direta:', error);
+                showResult('directResult', `Erro na conexão direta: ${error.message}`);
+            }
+        }
+
+        // Função para testar OPTIONS direto
+        async function testDirectOptions() {
+            const apiUrl = document.getElementById('directApiUrl').value;
+            showResult('directResult', `Testando OPTIONS direto para ${apiUrl}...`);
+            
+            try {
+                console.log('Iniciando OPTIONS direto para:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin
+                    },
+                    mode: 'cors'
+                });
+                
+                console.log('Resposta OPTIONS direta recebida:', response);
+                
+                // Exibir todos os headers da resposta
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                showResult('directResult', `OPTIONS direto bem-sucedido! Status: ${response.status}`, {
+                    headers: headers
+                });
+                
+                console.log('Headers da resposta OPTIONS direta:', headers);
+            } catch (error) {
+                console.error('Erro no OPTIONS direto:', error);
+                showResult('directResult', `Erro no OPTIONS direto: ${error.message}`);
+            }
+        }
+
+        // Função para testar conexão via proxy
+        async function testProxyConnection() {
+            const apiUrl = document.getElementById('proxyApiUrl').value;
+            showResult('proxyResult', `Testando conexão via proxy com ${apiUrl}...`);
+            
+            try {
+                console.log('Iniciando fetch via proxy para:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include'
+                });
+                
+                console.log('Resposta via proxy recebida:', response);
+                
+                const responseData = await response.json();
+                
+                // Exibir todos os headers da resposta
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                showResult('proxyResult', `Conexão via proxy bem-sucedida! Status: ${response.status}`, {
+                    data: responseData,
+                    headers: headers
+                });
+                
+                console.log('Headers da resposta via proxy:', headers);
+            } catch (error) {
+                console.error('Erro na conexão via proxy:', error);
+                showResult('proxyResult', `Erro na conexão via proxy: ${error.message}`);
+            }
+        }
+
+        // Função para testar OPTIONS via proxy
+        async function testProxyOptions() {
+            const apiUrl = document.getElementById('proxyApiUrl').value;
+            showResult('proxyResult', `Testando OPTIONS via proxy para ${apiUrl}...`);
+            
+            try {
+                console.log('Iniciando OPTIONS via proxy para:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin
+                    }
+                });
+                
+                console.log('Resposta OPTIONS via proxy recebida:', response);
+                
+                // Exibir todos os headers da resposta
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                showResult('proxyResult', `OPTIONS via proxy bem-sucedido! Status: ${response.status}`, {
+                    headers: headers
+                });
+                
+                console.log('Headers da resposta OPTIONS via proxy:', headers);
+            } catch (error) {
+                console.error('Erro no OPTIONS via proxy:', error);
+                showResult('proxyResult', `Erro no OPTIONS via proxy: ${error.message}`);
+            }
+        }
+
+        // Função para testar CORS
+        async function testCors() {
+            showResult('corsResult', 'Testando suporte a CORS...');
+            
+            try {
+                const apiUrl = 'https://rec-ub72.onrender.com/api/health';
+                
+                // Teste com mode: 'cors'
+                const corsResponse = await fetch(apiUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'include'
+                });
+                
+                // Teste com mode: 'no-cors'
+                const noCorsResponse = await fetch(apiUrl, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+                
+                showResult('corsResult', 'Teste de CORS concluído com sucesso!', {
+                    'cors': {
+                        status: corsResponse.status,
+                        type: corsResponse.type
+                    },
+                    'no-cors': {
+                        status: noCorsResponse.status,
+                        type: noCorsResponse.type
+                    }
+                });
+            } catch (error) {
+                console.error('Erro no teste de CORS:', error);
+                showResult('corsResult', `Erro no teste de CORS: ${error.message}`);
+            }
+        }
+
+        // Carregar informações do navegador
+        function loadBrowserInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookiesEnabled: navigator.cookieEnabled,
+                location: {
+                    href: window.location.href,
+                    origin: window.location.origin,
+                    protocol: window.location.protocol,
+                    host: window.location.host
+                }
+            };
+            
+            showResult('browserInfo', 'Informações do navegador:', info);
+        }
+
+        // Carregar informações do ambiente
+        function loadEnvInfo() {
+            const info = {
+                windowInnerWidth: window.innerWidth,
+                windowInnerHeight: window.innerHeight,
+                devicePixelRatio: window.devicePixelRatio,
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                currentTime: new Date().toString()
+            };
+            
+            showResult('envInfo', 'Informações do ambiente:', info);
+        }
+
+        // Inicializar a página
+        window.onload = function() {
+            loadBrowserInfo();
+            loadEnvInfo();
+        };
+    </script>
+</body>
+</html>

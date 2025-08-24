@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de CORS e Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        input, select {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        .header-buttons {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de CORS e Login</h1>
+    <p>Esta página testa a comunicação com o backend e identifica problemas de CORS.</p>
+    
+    <div class="header-buttons">
+        <button id="clearAllResults">Limpar Todos os Resultados</button>
+        <button id="showEnvironment">Mostrar Informações do Ambiente</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>1. Configuração</h2>
+        <div class="form-group">
+            <label for="apiUrl">URL da API:</label>
+            <input type="text" id="apiUrl" value="https://rec-ub72.onrender.com/api" />
+        </div>
+        <div class="form-group">
+            <label for="username">Nome de usuário:</label>
+            <input type="text" id="username" value="admin" />
+        </div>
+        <div class="form-group">
+            <label for="password">Senha:</label>
+            <input type="password" id="password" value="admin" />
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Teste de Conexão Básica</h2>
+        <button id="testHealth">Testar Endpoint /health</button>
+        <div id="healthResult" class="result">Resultados aparecerão aqui...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Teste de Preflight CORS</h2>
+        <button id="testPreflightHealth">Testar Preflight para /health</button>
+        <button id="testPreflightLogin">Testar Preflight para /auth/login</button>
+        <div id="preflightResult" class="result">Resultados aparecerão aqui...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Teste de Login</h2>
+        <button id="testLoginWithCredentials">Testar Login com credentials: include</button>
+        <button id="testLoginWithoutCredentials">Testar Login com credentials: omit</button>
+        <div id="loginResult" class="result">Resultados aparecerão aqui...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Teste de Cabeçalhos CORS</h2>
+        <button id="testCorsHeaders">Verificar Cabeçalhos CORS</button>
+        <div id="corsHeadersResult" class="result">Resultados aparecerão aqui...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>6. Informações do Ambiente</h2>
+        <div id="environmentResult" class="result">Clique em "Mostrar Informações do Ambiente" acima...</div>
+    </div>
+    
+    <script>
+        // Função para formatar e exibir resultados
+        function displayResult(elementId, content, isError = false, isSuccess = false) {
+            const element = document.getElementById(elementId);
+            element.className = 'result';
+            if (isError) element.classList.add('error');
+            if (isSuccess) element.classList.add('success');
+            
+            if (typeof content === 'object') {
+                element.innerHTML = `<pre>${JSON.stringify(content, null, 2)}</pre>`;
+            } else {
+                element.innerHTML = content;
+            }
+        }
+        
+        // Função para extrair e formatar cabeçalhos de resposta
+        function formatHeaders(headers) {
+            const result = {};
+            headers.forEach((value, key) => {
+                result[key] = value;
+            });
+            return result;
+        }
+        
+        // Função para formatar resposta completa
+        async function formatResponse(response) {
+            const headers = formatHeaders(response.headers);
+            let body;
+            
+            try {
+                body = await response.json();
+            } catch (e) {
+                try {
+                    body = await response.text();
+                } catch (e2) {
+                    body = 'Não foi possível ler o corpo da resposta';
+                }
+            }
+            
+            return {
+                status: response.status,
+                statusText: response.statusText,
+                headers,
+                body
+            };
+        }
+        
+        // Função para fazer requisição com log detalhado
+        async function fetchWithLog(url, options = {}) {
+            console.log(`Fazendo requisição para: ${url}`);
+            console.log('Opções:', JSON.stringify(options, (key, value) => {
+                // Não exibir o valor do token no console por segurança
+                if (key === 'Authorization') return 'Bearer ***';
+                return value;
+            }));
+            
+            const startTime = performance.now();
+            const response = await fetch(url, options);
+            const endTime = performance.now();
+            
+            console.log(`Resposta de ${url} - Status:`, response.status, response.statusText);
+            console.log(`Tempo de resposta: ${(endTime - startTime).toFixed(2)}ms`);
+            
+            return response;
+        }
+        
+        // Limpar todos os resultados
+        document.getElementById('clearAllResults').addEventListener('click', () => {
+            document.querySelectorAll('.result').forEach(el => {
+                el.className = 'result';
+                el.innerHTML = 'Resultados aparecerão aqui...';
+            });
+        });
+        
+        // Mostrar informações do ambiente
+        document.getElementById('showEnvironment').addEventListener('click', () => {
+            const info = {
+                'User Agent': navigator.userAgent,
+                'URL Atual': window.location.href,
+                'Protocolo': window.location.protocol,
+                'Host': window.location.host,
+                'Origem': window.location.origin,
+                'API URL Configurada': document.getElementById('apiUrl').value
+            };
+            
+            displayResult('environmentResult', info);
+        });
+        
+        // Teste de endpoint /health
+        document.getElementById('testHealth').addEventListener('click', async () => {
+            const apiUrl = document.getElementById('apiUrl').value;
+            displayResult('healthResult', 'Testando conexão com o endpoint /health...');
+            
+            try {
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const response = await fetchWithLog(`${apiUrl}/health?_=${timestamp}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const formattedResponse = await formatResponse(response);
+                displayResult('healthResult', {
+                    message: 'Conexão com o endpoint /health bem-sucedida',
+                    response: formattedResponse
+                }, false, true);
+            } catch (error) {
+                displayResult('healthResult', {
+                    message: `Erro ao conectar com o endpoint /health: ${error.message}`,
+                    error: error.toString(),
+                    stack: error.stack
+                }, true);
+            }
+        });
+        
+        // Teste de preflight para /health
+        document.getElementById('testPreflightHealth').addEventListener('click', async () => {
+            const apiUrl = document.getElementById('apiUrl').value;
+            displayResult('preflightResult', 'Testando preflight CORS para o endpoint /health...');
+            
+            try {
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const response = await fetchWithLog(`${apiUrl}/health?_=${timestamp}`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const formattedResponse = await formatResponse(response);
+                displayResult('preflightResult', {
+                    message: 'Preflight CORS para o endpoint /health bem-sucedido',
+                    response: formattedResponse
+                }, false, true);
+            } catch (error) {
+                displayResult('preflightResult', {
+                    message: `Erro no preflight CORS para o endpoint /health: ${error.message}`,
+                    error: error.toString(),
+                    stack: error.stack
+                }, true);
+            }
+        });
+        
+        // Teste de preflight para /auth/login
+        document.getElementById('testPreflightLogin').addEventListener('click', async () => {
+            const apiUrl = document.getElementById('apiUrl').value;
+            displayResult('preflightResult', 'Testando preflight CORS para o endpoint /auth/login...');
+            
+            try {
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const response = await fetchWithLog(`${apiUrl}/auth/login?_=${timestamp}`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const formattedResponse = await formatResponse(response);
+                displayResult('preflightResult', {
+                    message: 'Preflight CORS para o endpoint /auth/login bem-sucedido',
+                    response: formattedResponse
+                }, false, true);
+            } catch (error) {
+                displayResult('preflightResult', {
+                    message: `Erro no preflight CORS para o endpoint /auth/login: ${error.message}`,
+                    error: error.toString(),
+                    stack: error.stack
+                }, true);
+            }
+        });
+        
+        // Teste de login com credentials: include
+        document.getElementById('testLoginWithCredentials').addEventListener('click', async () => {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            displayResult('loginResult', 'Testando login com credentials: include...');
+            
+            try {
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const response = await fetchWithLog(`${apiUrl}/auth/login?_=${timestamp}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const formattedResponse = await formatResponse(response);
+                displayResult('loginResult', {
+                    message: 'Login com credentials: include bem-sucedido',
+                    response: formattedResponse
+                }, !response.ok, response.ok);
+            } catch (error) {
+                displayResult('loginResult', {
+                    message: `Erro no login com credentials: include: ${error.message}`,
+                    error: error.toString(),
+                    stack: error.stack
+                }, true);
+            }
+        });
+        
+        // Teste de login sem credentials
+        document.getElementById('testLoginWithoutCredentials').addEventListener('click', async () => {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            displayResult('loginResult', 'Testando login com credentials: omit...');
+            
+            try {
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const response = await fetchWithLog(`${apiUrl}/auth/login?_=${timestamp}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'omit',
+                    mode: 'cors'
+                });
+                
+                const formattedResponse = await formatResponse(response);
+                displayResult('loginResult', {
+                    message: 'Login com credentials: omit bem-sucedido',
+                    response: formattedResponse
+                }, !response.ok, response.ok);
+            } catch (error) {
+                displayResult('loginResult', {
+                    message: `Erro no login com credentials: omit: ${error.message}`,
+                    error: error.toString(),
+                    stack: error.stack
+                }, true);
+            }
+        });
+        
+        // Teste de cabeçalhos CORS
+        document.getElementById('testCorsHeaders').addEventListener('click', async () => {
+            const apiUrl = document.getElementById('apiUrl').value;
+            displayResult('corsHeadersResult', 'Verificando cabeçalhos CORS...');
+            
+            try {
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const response = await fetchWithLog(`${apiUrl}/health?_=${timestamp}`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    },
+                    mode: 'cors'
+                });
+                
+                const headers = formatHeaders(response.headers);
+                const corsHeaders = {};
+                
+                // Filtrar apenas os cabeçalhos CORS
+                Object.keys(headers).forEach(key => {
+                    if (key.toLowerCase().startsWith('access-control-')) {
+                        corsHeaders[key] = headers[key];
+                    }
+                });
+                
+                // Analisar os cabeçalhos CORS
+                const analysis = {
+                    'Cabeçalhos CORS': corsHeaders,
+                    'Análise': {}
+                };
+                
+                // Verificar Access-Control-Allow-Origin
+                const allowOrigin = headers['access-control-allow-origin'];
+                if (allowOrigin) {
+                    if (allowOrigin === '*') {
+                        analysis['Análise']['Access-Control-Allow-Origin'] = {
+                            valor: allowOrigin,
+                            status: 'Atenção',
+                            mensagem: 'O valor "*" permite requisições de qualquer origem, mas não é compatível com credentials: include'
+                        };
+                    } else if (allowOrigin === window.location.origin) {
+                        analysis['Análise']['Access-Control-Allow-Origin'] = {
+                            valor: allowOrigin,
+                            status: 'OK',
+                            mensagem: 'A origem atual está permitida'
+                        };
+                    } else {
+                        analysis['Análise']['Access-Control-Allow-Origin'] = {
+                            valor: allowOrigin,
+                            status: 'Problema',
+                            mensagem: `A origem atual (${window.location.origin}) não está na lista de origens permitidas`
+                        };
+                    }
+                } else {
+                    analysis['Análise']['Access-Control-Allow-Origin'] = {
+                        valor: 'Ausente',
+                        status: 'Problema',
+                        mensagem: 'O cabeçalho Access-Control-Allow-Origin é obrigatório para CORS'
+                    };
+                }
+                
+                // Verificar Access-Control-Allow-Credentials
+                const allowCredentials = headers['access-control-allow-credentials'];
+                if (allowCredentials) {
+                    if (allowCredentials === 'true') {
+                        if (allowOrigin === '*') {
+                            analysis['Análise']['Access-Control-Allow-Credentials'] = {
+                                valor: allowCredentials,
+                                status: 'Problema',
+                                mensagem: 'O valor "true" não é compatível com Access-Control-Allow-Origin: *'
+                            };
+                        } else {
+                            analysis['Análise']['Access-Control-Allow-Credentials'] = {
+                                valor: allowCredentials,
+                                status: 'OK',
+                                mensagem: 'O valor "true" permite o envio de credenciais'
+                            };
+                        }
+                    } else {
+                        analysis['Análise']['Access-Control-Allow-Credentials'] = {
+                            valor: allowCredentials,
+                            status: 'Problema',
+                            mensagem: 'O valor deve ser "true" para permitir o envio de credenciais'
+                        };
+                    }
+                } else if (allowOrigin !== '*') {
+                    analysis['Análise']['Access-Control-Allow-Credentials'] = {
+                        valor: 'Ausente',
+                        status: 'Problema',
+                        mensagem: 'O cabeçalho Access-Control-Allow-Credentials é necessário para usar credentials: include'
+                    };
+                }
+                
+                // Verificar Access-Control-Allow-Methods
+                const allowMethods = headers['access-control-allow-methods'];
+                if (allowMethods) {
+                    const methods = allowMethods.split(',').map(m => m.trim());
+                    if (methods.includes('GET') && methods.includes('POST') && methods.includes('OPTIONS')) {
+                        analysis['Análise']['Access-Control-Allow-Methods'] = {
+                            valor: allowMethods,
+                            status: 'OK',
+                            mensagem: 'Os métodos necessários (GET, POST, OPTIONS) estão permitidos'
+                        };
+                    } else {
+                        analysis['Análise']['Access-Control-Allow-Methods'] = {
+                            valor: allowMethods,
+                            status: 'Problema',
+                            mensagem: 'Alguns métodos necessários (GET, POST, OPTIONS) podem estar faltando'
+                        };
+                    }
+                } else {
+                    analysis['Análise']['Access-Control-Allow-Methods'] = {
+                        valor: 'Ausente',
+                        status: 'Problema',
+                        mensagem: 'O cabeçalho Access-Control-Allow-Methods é necessário para requisições preflight'
+                    };
+                }
+                
+                // Verificar Access-Control-Allow-Headers
+                const allowHeaders = headers['access-control-allow-headers'];
+                if (allowHeaders) {
+                    const headersList = allowHeaders.toLowerCase().split(',').map(h => h.trim());
+                    if (headersList.includes('content-type') && headersList.includes('authorization')) {
+                        analysis['Análise']['Access-Control-Allow-Headers'] = {
+                            valor: allowHeaders,
+                            status: 'OK',
+                            mensagem: 'Os cabeçalhos necessários (Content-Type, Authorization) estão permitidos'
+                        };
+                    } else {
+                        analysis['Análise']['Access-Control-Allow-Headers'] = {
+                            valor: allowHeaders,
+                            status: 'Problema',
+                            mensagem: 'Alguns cabeçalhos necessários (Content-Type, Authorization) podem estar faltando'
+                        };
+                    }
+                } else {
+                    analysis['Análise']['Access-Control-Allow-Headers'] = {
+                        valor: 'Ausente',
+                        status: 'Problema',
+                        mensagem: 'O cabeçalho Access-Control-Allow-Headers é necessário para requisições preflight'
+                    };
+                }
+                
+                displayResult('corsHeadersResult', analysis, false, true);
+            } catch (error) {
+                displayResult('corsHeadersResult', {
+                    message: `Erro ao verificar cabeçalhos CORS: ${error.message}`,
+                    error: error.toString(),
+                    stack: error.stack
+                }, true);
+            }
+        });
+    </script>
+</body>
+</html>

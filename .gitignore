@@ -28,6 +28,11 @@ frontend/.env.local
 # Arquivos de IDE
 .vscode/
 .idea/
+
+# Vercel
+.vercel/
+.vercelignore
+vercel.json
 *.swp
 *.swo
 
