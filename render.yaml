@@ -17,7 +17,7 @@ services:
   - type: web
     name: rec-frontend
     env: node
-    buildCommand: cd frontend && npm install && npm run build
+    buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
     startCommand: cd frontend && npm run preview -- --host 0.0.0.0 --port $PORT
     envVars:
       - key: NODE_VERSION
