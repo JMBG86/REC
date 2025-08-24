@@ -1,1 +1,4 @@
-# Este arquivo permite que o Python reconheça este diretório como um pacote\n\n# Importar todos os modelos para facilitar a importação\nfrom src.models.car_model import CarBrand, CarModel\nfrom src.models.vehicle import Vehicle, VehicleUpdate, Document\nfrom src.models.rent_a_car import RentACar, EmailTrigger\nfrom src.models.store_location import StoreLocation\nfrom src.models.user import User, db
+# Este arquivo permite que o Python reconheça este diretório como um pacote
+
+# Não importar modelos aqui para evitar importações circulares
+# Cada módulo deve importar diretamente o que precisa
