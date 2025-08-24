@@ -4,7 +4,7 @@ import './App.css'
 
 // Componentes
 import Login from './components/Login'
-import Dashboard from './components/Dashboard'
+import PainelDeControlo from './components/Dashboard'
 import VehicleList from './components/VehicleList'
 import VehicleDetail from './components/VehicleDetail'
 import VehicleForm from './components/VehicleForm'
@@ -40,7 +40,7 @@ function App() {
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout>
-                  <Dashboard />
+                  <PainelDeControlo />
                 </Layout>
               </ProtectedRoute>
             } />

@@ -1,11 +1,11 @@
 from flask import Blueprint, jsonify, request, send_file
-from src.models.user import db
-from src.models.vehicle import Vehicle, VehicleUpdate, Document
+from ..models.user import db
+from ..models.vehicle import Vehicle, VehicleUpdate, Document
 # Importar diretamente do módulo específico
-from src.models.car_model.car_model import CarBrand, CarModel
-# Usar importação absoluta para evitar problemas no Render
-from src.models.store_location import StoreLocation
-from src.routes.auth import token_required
+from ..models.car_model import CarBrand, CarModel
+# Usar importação relativa para evitar problemas no Render
+from ..models.store_location import StoreLocation
+from .auth import token_required
 from datetime import datetime
 import os
 import uuid
@@ -58,7 +58,7 @@ def create_vehicle(current_user):
         nuipc_numero=data.get('nuipc_numero'),
         gps_ativo=data.get('gps_ativo', False),
         status=data.get('status', 'em_tratamento'),
-        data_desaparecimento=datetime.fromisoformat(data['data_desaparecimento']) if data.get('data_desaparecimento') else None,
+        data_desaparecimento=datetime.fromisoformat(f"{data['data_desaparecimento']}T00:00:00") if data.get('data_desaparecimento') and 'T' not in data['data_desaparecimento'] else datetime.fromisoformat(data['data_desaparecimento']) if data.get('data_desaparecimento') else None,
         loja_aluguer=data.get('loja_aluguer'),
         observacoes=data.get('observacoes'),
         cliente_nome=data.get('cliente_nome'),
@@ -98,9 +98,10 @@ def update_vehicle(current_user, vehicle_id):
     
     vehicle.marca = data.get('marca', vehicle.marca)
     vehicle.modelo = data.get('modelo', vehicle.modelo)
-    vehicle.car_brand_id = data.get('car_brand_id', vehicle.car_brand_id)
-    vehicle.car_model_id = data.get('car_model_id', vehicle.car_model_id)
-    vehicle.store_location_id = data.get('store_location_id', vehicle.store_location_id)
+    # Removendo referências às colunas que não existem no modelo
+    # vehicle.car_brand_id = data.get('car_brand_id', vehicle.car_brand_id)
+    # vehicle.car_model_id = data.get('car_model_id', vehicle.car_model_id)
+    # vehicle.store_location_id = data.get('store_location_id', vehicle.store_location_id)
     vehicle.vin = data.get('vin', vehicle.vin)
     vehicle.valor = data.get('valor', vehicle.valor)
     vehicle.nuipc = data.get('nuipc', vehicle.nuipc)
@@ -116,9 +117,17 @@ def update_vehicle(current_user, vehicle_id):
     vehicle.cliente_observacoes = data.get('cliente_observacoes', vehicle.cliente_observacoes)
     
     if data.get('data_desaparecimento'):
-        vehicle.data_desaparecimento = datetime.fromisoformat(data['data_desaparecimento'])
+        # Adicionar T00:00:00 se a data não tiver a parte de tempo
+        data_desap = data['data_desaparecimento']
+        if 'T' not in data_desap:
+            data_desap = f"{data_desap}T00:00:00"
+        vehicle.data_desaparecimento = datetime.fromisoformat(data_desap)
     if data.get('data_recuperacao'):
-        vehicle.data_recuperacao = datetime.fromisoformat(data['data_recuperacao'])
+        # Adicionar T00:00:00 se a data não tiver a parte de tempo
+        data_recup = data['data_recuperacao']
+        if 'T' not in data_recup:
+            data_recup = f"{data_recup}T00:00:00"
+        vehicle.data_recuperacao = datetime.fromisoformat(data_recup)
     
     vehicle.updated_at = datetime.utcnow()
     

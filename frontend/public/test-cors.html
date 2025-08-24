@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de CORS - CarFind</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de CORS - CarFind</h1>
+    
+    <div>
+        <h2>Configuração Atual</h2>
+        <div id="config-info" class="result">Carregando...</div>
+    </div>
+
+    <div>
+        <h2>Teste de Conexão Direta com Backend</h2>
+        <button id="test-backend-direct">Testar Backend Direto (porta 5000)</button>
+        <div id="backend-direct-result" class="result">Resultado aparecerá aqui...</div>
+    </div>
+
+    <div>
+        <h2>Teste de Conexão via Proxy</h2>
+        <button id="test-backend-proxy">Testar Backend via Proxy (porta 5173)</button>
+        <div id="backend-proxy-result" class="result">Resultado aparecerá aqui...</div>
+    </div>
+
+    <script>
+        // Configurações
+        const BACKEND_DIRECT = 'http://localhost:5000/api';
+        const BACKEND_PROXY = '/api'; // Usa o proxy configurado no Vite
+        const VITE_DEV_SERVER = 'http://localhost:5173';
+
+        // Mostrar configuração atual
+        document.getElementById('config-info').textContent = 
+            `Backend direto: ${BACKEND_DIRECT}\n` +
+            `Backend via proxy: ${BACKEND_PROXY}\n` +
+            `Servidor de desenvolvimento: ${VITE_DEV_SERVER}\n` +
+            `Origem atual: ${window.location.origin}`;
+
+        // Função para testar o backend diretamente
+        document.getElementById('test-backend-direct').addEventListener('click', async () => {
+            const resultElement = document.getElementById('backend-direct-result');
+            resultElement.textContent = 'Testando...';
+            
+            try {
+                const response = await fetch(`${BACKEND_DIRECT}/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                let responseData;
+                try {
+                    responseData = await response.json();
+                } catch (e) {
+                    responseData = await response.text();
+                }
+                
+                resultElement.innerHTML = 
+                    `<strong>Status:</strong> ${response.status} ${response.statusText}\n` +
+                    `<strong>Headers:</strong>\n${JSON.stringify(headers, null, 2)}\n\n` +
+                    `<strong>Resposta:</strong>\n${JSON.stringify(responseData, null, 2)}`;
+                
+                if (response.ok) {
+                    resultElement.classList.add('success');
+                } else {
+                    resultElement.classList.add('error');
+                }
+            } catch (error) {
+                resultElement.textContent = `Erro: ${error.message}`;
+                resultElement.classList.add('error');
+            }
+        });
+
+        // Função para testar o backend via proxy
+        document.getElementById('test-backend-proxy').addEventListener('click', async () => {
+            const resultElement = document.getElementById('backend-proxy-result');
+            resultElement.textContent = 'Testando...';
+            
+            try {
+                const response = await fetch(`${BACKEND_PROXY}/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                let responseData;
+                try {
+                    responseData = await response.json();
+                } catch (e) {
+                    responseData = await response.text();
+                }
+                
+                resultElement.innerHTML = 
+                    `<strong>Status:</strong> ${response.status} ${response.statusText}\n` +
+                    `<strong>Headers:</strong>\n${JSON.stringify(headers, null, 2)}\n\n` +
+                    `<strong>Resposta:</strong>\n${JSON.stringify(responseData, null, 2)}`;
+                
+                if (response.ok) {
+                    resultElement.classList.add('success');
+                } else {
+                    resultElement.classList.add('error');
+                }
+            } catch (error) {
+                resultElement.textContent = `Erro: ${error.message}`;
+                resultElement.classList.add('error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API Connection</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; }
+        .success { color: green; }
+        .error { color: red; }
+        input { padding: 8px; margin: 5px 0; width: 100%; }
+        .test-group { margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+        h2 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Conexão com API</h1>
+    
+    <div class="test-group">
+        <h2>1. Verificação de Saúde da API</h2>
+        <button id="healthBtn">Testar Endpoint de Saúde</button>
+        <pre id="healthResult">Resultados aparecerão aqui...</pre>
+    </div>
+
+    <div class="test-group">
+        <h2>2. Teste de CORS (Preflight)</h2>
+        <button id="corsBtn">Testar CORS</button>
+        <pre id="corsResult">Resultados aparecerão aqui...</pre>
+    </div>
+
+    <div class="test-group">
+        <h2>3. Teste de Login</h2>
+        <div>
+            <label for="username">Nome de utilizador:</label>
+            <input type="text" id="username" value="admin">
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="admin">
+        </div>
+        <button id="loginBtn">Testar Login</button>
+        <pre id="loginResult">Resultados aparecerão aqui...</pre>
+    </div>
+
+    <div class="test-group">
+        <h2>4. Teste de Login com URL Direta</h2>
+        <p>Testa o login usando a URL direta do backend, ignorando qualquer proxy ou rewrite</p>
+        <button id="directLoginBtn">Testar Login Direto</button>
+        <pre id="directLoginResult">Resultados aparecerão aqui...</pre>
+    </div>
+
+    <div class="test-group">
+        <h2>5. Informações do Ambiente</h2>
+        <button id="envBtn">Mostrar Informações</button>
+        <pre id="envResult">Resultados aparecerão aqui...</pre>
+    </div>
+
+    <script>
+        // Configurações
+        const API_PROXY = '/api'; // URL do proxy configurado no frontend
+        const API_DIRECT = 'https://rec2.onrender.com/api'; // URL direta do backend
+
+        // Função para formatar resposta
+        async function formatResponse(response) {
+            const result = {
+                status: response.status,
+                statusText: response.statusText,
+                headers: {}
+            };
+
+            // Capturar headers
+            response.headers.forEach((value, key) => {
+                result.headers[key] = value;
+            });
+
+            // Tentar obter o corpo como JSON
+            try {
+                result.body = await response.json();
+            } catch (e) {
+                try {
+                    result.body = await response.text();
+                } catch (e2) {
+                    result.body = 'Não foi possível ler o corpo da resposta';
+                }
+            }
+
+            return result;
+        }
+
+        // Função para mostrar resultado
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = isError ? 'error' : 'success';
+            element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        }
+
+        // 1. Teste de saúde
+        document.getElementById('healthBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('healthResult');
+            resultElement.textContent = 'Testando...';
+            resultElement.className = '';
+
+            try {
+                // Testar com proxy
+                const proxyResponse = await fetch(`${API_PROXY}/health`);
+                const proxyResult = await formatResponse(proxyResponse);
+                
+                // Testar direto
+                const directResponse = await fetch(`${API_DIRECT}/health`);
+                const directResult = await formatResponse(directResponse);
+                
+                showResult('healthResult', {
+                    'Via Proxy': proxyResult,
+                    'Direto': directResult
+                });
+            } catch (error) {
+                showResult('healthResult', `Erro: ${error.message}`, true);
+            }
+        });
+
+        // 2. Teste de CORS
+        document.getElementById('corsBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('corsResult');
+            resultElement.textContent = 'Testando...';
+            resultElement.className = '';
+
+            try {
+                // Testar CORS com proxy
+                const proxyResponse = await fetch(`${API_PROXY}/auth/login`, {
+                    method: 'OPTIONS'
+                });
+                const proxyResult = await formatResponse(proxyResponse);
+                
+                // Testar CORS direto
+                const directResponse = await fetch(`${API_DIRECT}/auth/login`, {
+                    method: 'OPTIONS'
+                });
+                const directResult = await formatResponse(directResponse);
+                
+                showResult('corsResult', {
+                    'Via Proxy': proxyResult,
+                    'Direto': directResult
+                });
+            } catch (error) {
+                showResult('corsResult', `Erro: ${error.message}`, true);
+            }
+        });
+
+        // 3. Teste de login
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('loginResult');
+            resultElement.textContent = 'Testando...';
+            resultElement.className = '';
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_PROXY}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await formatResponse(response);
+                showResult('loginResult', result, !response.ok);
+            } catch (error) {
+                showResult('loginResult', `Erro: ${error.message}`, true);
+            }
+        });
+
+        // 4. Teste de login direto
+        document.getElementById('directLoginBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('directLoginResult');
+            resultElement.textContent = 'Testando...';
+            resultElement.className = '';
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_DIRECT}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await formatResponse(response);
+                showResult('directLoginResult', result, !response.ok);
+            } catch (error) {
+                showResult('directLoginResult', `Erro: ${error.message}`, true);
+            }
+        });
+
+        // 5. Informações do ambiente
+        document.getElementById('envBtn').addEventListener('click', () => {
+            const info = {
+                'User Agent': navigator.userAgent,
+                'URL Atual': window.location.href,
+                'Protocolo': window.location.protocol,
+                'Host': window.location.host,
+                'Origem': window.location.origin,
+                'API Proxy Configurado': API_PROXY,
+                'API Direta Configurada': API_DIRECT
+            };
+            
+            showResult('envResult', info);
+        });
+    </script>
+</body>
+</html>

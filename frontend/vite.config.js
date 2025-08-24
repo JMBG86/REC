@@ -18,6 +18,11 @@ export default defineConfig(({ command }) => ({
         changeOrigin: true,
         secure: false
       }
-    } : undefined
+    } : undefined,
+    hmr: {
+      overlay: true,
+      clientPort: 5173,
+      timeout: 1000
+    }
   }
 }))

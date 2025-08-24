@@ -1,5 +1,5 @@
-# Usar importação absoluta para garantir que o módulo seja encontrado
-from src.models.user import db
+# Usar importação relativa para garantir que o módulo seja encontrado
+from .user import db
 from datetime import datetime
 
 class StoreLocation(db.Model):

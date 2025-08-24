@@ -1,9 +1,9 @@
-from src.models.user import db
+from .user import db
 from datetime import datetime
 # Importar diretamente dos módulos específicos
-from src.models.car_model.car_model import CarBrand, CarModel
-# Usar importação absoluta para garantir que o módulo seja encontrado
-from src.models.store_location import StoreLocation
+from .car_model import CarBrand, CarModel
+# Usar importação relativa para garantir que o módulo seja encontrado
+from .store_location import StoreLocation
 
 class Vehicle(db.Model):
     id = db.Column(db.Integer, primary_key=True)

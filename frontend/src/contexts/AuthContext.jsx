@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { API_BASE, apiRequest } from '../utils/api'
 
 const AuthContext = createContext()
 
@@ -14,29 +15,23 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [token, setToken] = useState(localStorage.getItem('token'))
-
-  // API base URL - usando variável de ambiente
-  const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+  const [apiError, setApiError] = useState(null)
 
   useEffect(() => {
     if (token) {
       // Verificar se o token é válido
-      fetch(`${API_BASE}/auth/me`, {
+      console.log('Verificando token...')
+      apiRequest('auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
-      .then(response => {
-        if (response.ok) {
-          return response.json()
-        } else {
-          throw new Error('Token inválido')
-        }
-      })
       .then(userData => {
+        console.log('Dados do usuário recebidos')
         setUser(userData)
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Erro na verificação do token:', error)
         localStorage.removeItem('token')
         setToken(null)
       })
@@ -50,25 +45,27 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     try {
-      const response = await fetch(`${API_BASE}/auth/login`, {
+      setApiError(null) // Limpa erros anteriores
+      console.log('Tentando login...')
+      console.log('Ambiente:', import.meta.env.MODE)
+      
+      const startTime = performance.now()
+      
+      const data = await apiRequest('auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({ username, password })
       })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Erro no login')
-      }
-
-      const data = await response.json()
+      
+      const endTime = performance.now()
+      console.log(`Login completado em ${endTime - startTime}ms`)
+      console.log('Login bem-sucedido')
+      
       localStorage.setItem('token', data.token)
       setToken(data.token)
       setUser(data.user)
       return { success: true }
     } catch (error) {
+      console.error('Erro durante login:', error)
       return { success: false, error: error.message }
     }
   }
@@ -85,7 +82,8 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
-    API_BASE
+    API_BASE,
+    apiError
   }
 
   return (

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diagnóstico Detalhado de API</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; max-height: 300px; }
+        .success { color: green; }
+        .error { color: red; }
+        input { padding: 8px; margin: 5px 0; width: 100%; }
+        .test-group { margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+        h2 { margin-top: 0; }
+        .tabs { display: flex; margin-bottom: 10px; }
+        .tab { padding: 10px 15px; cursor: pointer; border: 1px solid #ddd; border-radius: 5px 5px 0 0; margin-right: 5px; }
+        .tab.active { background: #f0f0f0; border-bottom: none; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        table { width: 100%; border-collapse: collapse; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 8px; text-align: left; }
+        th { background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Diagnóstico Detalhado de Conexão com API</h1>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="tests">Testes de API</div>
+        <div class="tab" data-tab="network">Diagnóstico de Rede</div>
+        <div class="tab" data-tab="env">Ambiente</div>
+        <div class="tab" data-tab="logs">Logs</div>
+    </div>
+    
+    <div id="tests" class="tab-content active">
+        <div class="test-group">
+            <h2>1. Verificação de Saúde da API</h2>
+            <button id="healthBtn">Testar Endpoint de Saúde</button>
+            <pre id="healthResult">Resultados aparecerão aqui...</pre>
+        </div>
+
+        <div class="test-group">
+            <h2>2. Teste de CORS (Preflight)</h2>
+            <button id="corsBtn">Testar CORS</button>
+            <pre id="corsResult">Resultados aparecerão aqui...</pre>
+        </div>
+
+        <div class="test-group">
+            <h2>3. Teste de Login</h2>
+            <div>
+                <label for="username">Nome de utilizador:</label>
+                <input type="text" id="username" value="admin">
+            </div>
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="admin">
+            </div>
+            <button id="loginBtn">Testar Login via Proxy</button>
+            <button id="directLoginBtn">Testar Login Direto</button>
+            <pre id="loginResult">Resultados aparecerão aqui...</pre>
+        </div>
+    </div>
+    
+    <div id="network" class="tab-content">
+        <div class="test-group">
+            <h2>Diagnóstico de Rede</h2>
+            <button id="networkTestBtn">Executar Diagnóstico</button>
+            <pre id="networkResult">Resultados aparecerão aqui...</pre>
+        </div>
+    </div>
+    
+    <div id="env" class="tab-content">
+        <div class="test-group">
+            <h2>Informações do Ambiente</h2>
+            <button id="envBtn">Mostrar Informações</button>
+            <pre id="envResult">Resultados aparecerão aqui...</pre>
+        </div>
+    </div>
+    
+    <div id="logs" class="tab-content">
+        <div class="test-group">
+            <h2>Logs de Requisições</h2>
+            <button id="clearLogsBtn">Limpar Logs</button>
+            <pre id="requestLogs">Logs aparecerão aqui...</pre>
+        </div>
+    </div>
+
+    <script>
+        // Configurações
+        const API_PROXY = '/api'; // URL do proxy configurado no frontend
+        const API_DIRECT = 'https://rec2.onrender.com/api'; // URL direta do backend
+        let requestLogs = [];
+
+        // Função para adicionar log
+        function addLog(type, url, details) {
+            const timestamp = new Date().toISOString();
+            requestLogs.unshift({ timestamp, type, url, details });
+            if (requestLogs.length > 50) requestLogs.pop(); // Limitar a 50 logs
+            updateLogs();
+        }
+
+        // Função para atualizar logs na UI
+        function updateLogs() {
+            const logsElement = document.getElementById('requestLogs');
+            logsElement.textContent = requestLogs.map(log => 
+                `[${log.timestamp}] ${log.type}: ${log.url}\n${JSON.stringify(log.details, null, 2)}\n-------------------\n`
+            ).join('\n');
+        }
+
+        // Função para formatar resposta
+        async function formatResponse(response) {
+            const result = {
+                status: response.status,
+                statusText: response.statusText,
+                headers: {}
+            };
+
+            // Capturar headers
+            response.headers.forEach((value, key) => {
+                result.headers[key] = value;
+            });
+
+            // Tentar obter o corpo como JSON
+            try {
+                result.body = await response.json();
+            } catch (e) {
+                try {
+                    result.body = await response.text();
+                } catch (e2) {
+                    result.body = 'Não foi possível ler o corpo da resposta';
+                }
+            }
+
+            return result;
+        }
+
+        // Função para mostrar resultado
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = isError ? 'error' : 'success';
+            element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        }
+
+        // Função para fazer fetch com log
+        async function fetchWithLog(url, options = {}) {
+            const startTime = performance.now();
+            let response;
+            let error = null;
+            
+            try {
+                response = await fetch(url, options);
+                const endTime = performance.now();
+                const responseData = await formatResponse(response);
+                
+                addLog(
+                    options.method || 'GET', 
+                    url, 
+                    {
+                        duration: `${(endTime - startTime).toFixed(2)}ms`,
+                        request: {
+                            method: options.method || 'GET',
+                            headers: options.headers || {},
+                            body: options.body ? JSON.parse(options.body) : undefined
+                        },
+                        response: responseData
+                    }
+                );
+                
+                return response;
+            } catch (err) {
+                error = err;
+                addLog(
+                    options.method || 'GET', 
+                    url, 
+                    {
+                        error: err.message,
+                        stack: err.stack,
+                        request: {
+                            method: options.method || 'GET',
+                            headers: options.headers || {},
+                            body: options.body ? JSON.parse(options.body) : undefined
+                        }
+                    }
+                );
+                throw err;
+            }
+        }
+
+        // 1. Teste de saúde
+        document.getElementById('healthBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('healthResult');
+            resultElement.textContent = 'Testando...';
+            resultElement.className = '';
+
+            try {
+                // Testar com proxy
+                const proxyResponse = await fetchWithLog(`${API_PROXY}/health`);
+                const proxyResult = await formatResponse(proxyResponse);
+                
+                // Testar direto
+                const directResponse = await fetchWithLog(`${API_DIRECT}/health`);
+                const directResult = await formatResponse(directResponse);
+                
+                showResult('healthResult', {
+                    'Via Proxy': proxyResult,
+                    'Direto': directResult
+                });
+            } catch (error) {
+                showResult('healthResult', `Erro: ${error.message}`, true);
+            }
+        });
+
+        // 2. Teste de CORS
+        document.getElementById('corsBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('corsResult');
+            resultElement.textContent = 'Testando...';
+            resultElement.className = '';
+
+            try {
+                // Testar CORS com proxy
+                const proxyResponse = await fetchWithLog(`${API_PROXY}/auth/login`, {
+                    method: 'OPTIONS'
+                });
+                const proxyResult = await formatResponse(proxyResponse);
+                
+                // Testar CORS direto
+                const directResponse = await fetchWithLog(`${API_DIRECT}/auth/login`, {
+                    method: 'OPTIONS'
+                });
+                const directResult = await formatResponse(directResponse);
+                
+                showResult('corsResult', {
+                    'Via Proxy': proxyResult,
+                    'Direto': directResult
+                });
+            } catch (error) {
+                showResult('corsResult', `Erro: ${error.message}`, true);
+            }
+        });
+
+        // 3. Teste de login
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('loginResult');
+            resultElement.textContent = 'Testando...';
+            resultElement.className = '';
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetchWithLog(`${API_PROXY}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await formatResponse(response);
+                showResult('loginResult', {
+                    'Via Proxy': result
+                }, !response.ok);
+            } catch (error) {
+                showResult('loginResult', `Erro: ${error.message}`, true);
+            }
+        });
+
+        // 4. Teste de login direto
+        document.getElementById('directLoginBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('loginResult');
+            resultElement.textContent = 'Testando...';
+            resultElement.className = '';
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetchWithLog(`${API_DIRECT}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await formatResponse(response);
+                showResult('loginResult', {
+                    'Direto': result
+                }, !response.ok);
+            } catch (error) {
+                showResult('loginResult', `Erro: ${error.message}`, true);
+            }
+        });
+
+        // 5. Diagnóstico de rede
+        document.getElementById('networkTestBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('networkResult');
+            resultElement.textContent = 'Executando diagnóstico...';
+            resultElement.className = '';
+
+            const tests = [
+                { name: 'Conexão com API via Proxy', url: `${API_PROXY}/health` },
+                { name: 'Conexão com API Direta', url: `${API_DIRECT}/health` },
+                { name: 'CORS via Proxy', url: `${API_PROXY}/auth/login`, options: { method: 'OPTIONS' } },
+                { name: 'CORS Direto', url: `${API_DIRECT}/auth/login`, options: { method: 'OPTIONS' } }
+            ];
+
+            const results = {};
+
+            for (const test of tests) {
+                try {
+                    const startTime = performance.now();
+                    const response = await fetchWithLog(test.url, test.options || {});
+                    const endTime = performance.now();
+                    
+                    results[test.name] = {
+                        status: response.status,
+                        time: `${(endTime - startTime).toFixed(2)}ms`,
+                        success: response.ok
+                    };
+                } catch (error) {
+                    results[test.name] = {
+                        error: error.message,
+                        success: false
+                    };
+                }
+            }
+
+            showResult('networkResult', results);
+        });
+
+        // 6. Informações do ambiente
+        document.getElementById('envBtn').addEventListener('click', () => {
+            const info = {
+                'User Agent': navigator.userAgent,
+                'URL Atual': window.location.href,
+                'Protocolo': window.location.protocol,
+                'Host': window.location.host,
+                'Origem': window.location.origin,
+                'API Proxy Configurado': API_PROXY,
+                'API Direta Configurada': API_DIRECT,
+                'Suporte a Cookies': navigator.cookieEnabled,
+                'Variáveis de Ambiente': {
+                    'MODE': window.MODE || 'Não disponível',
+                    'VITE_API_BASE': window.VITE_API_BASE || 'Não disponível'
+                }
+            };
+            
+            showResult('envResult', info);
+        });
+
+        // 7. Limpar logs
+        document.getElementById('clearLogsBtn').addEventListener('click', () => {
+            requestLogs = [];
+            updateLogs();
+        });
+
+        // Gerenciamento de abas
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Desativar todas as abas
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Ativar a aba clicada
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -15,11 +15,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
-export default function Dashboard() {
+export default function PainelDeControlo() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const { token, API_BASE } = useAuth()
 
+  // Comentário de teste para verificar hot-reloading no frontend
   useEffect(() => {
     fetchStats()
   }, [])
@@ -37,7 +38,7 @@ export default function Dashboard() {
         setStats(data)
       }
     } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error)
+      console.error('Erro ao carregar estatísticas do Painel de Controlo:', error)
     } finally {
       setLoading(false)
     }
@@ -54,7 +55,7 @@ export default function Dashboard() {
   if (!stats) {
     return (
       <div className="text-center text-muted-foreground">
-        Erro ao carregar dados do dashboard
+        Erro ao carregar dados do Painel de Controlo
       </div>
     )
   }
@@ -69,15 +70,15 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral do sistema de recuperação de veículos</p>
+        <h1 className="text-2xl font-bold text-green-500">DASHBOARD</h1>
+        <p className="text-muted-foreground">Visão geral do Painel de Controlo do sistema de recuperação de veículos</p>
       </div>
 
       {/* Cards de estatísticas principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Veículos</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Veículos em sistema</CardTitle>
             <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

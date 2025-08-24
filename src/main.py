@@ -7,20 +7,22 @@ from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
 from dotenv import load_dotenv
+
+# Importar o db primeiro
 from src.models.user import db
+
+# Importar o módulo models para garantir que todos os modelos sejam carregados na ordem correta
+import src.models
+from src.models.test_model import TestModel  # Importando o modelo de teste
+
+# Importar os blueprints após os modelos
 from src.routes.user import user_bp
 from src.routes.vehicle import vehicle_bp
 from src.routes.auth import auth_bp
 from src.routes.document import document_bp
 from src.routes.email_trigger import email_trigger_bp
 from src.routes.admin import admin_bp
-
-# Importar todos os modelos para que sejam criadas as tabelas
-from src.models.vehicle import Vehicle, VehicleUpdate, Document
-from src.models.rent_a_car import RentACar, EmailTrigger
-from src.models.car_model import CarBrand, CarModel
-# Usar importação absoluta para garantir que o módulo seja encontrado
-from src.models.store_location import StoreLocation
+from src.routes.test_route import test_bp  # Importando o novo blueprint de teste
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -28,8 +30,17 @@ load_dotenv()
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 
-# Configurar CORS para permitir requests do frontend
-CORS(app, origins="*")
+# Configurar CORS para permitir requests do frontend com credenciais
+cors = CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-frontend.vercel.app"],
+        "supports_credentials": True,
+        "allow_headers": ["Content-Type", "Authorization"],
+        "expose_headers": ["Content-Type", "Authorization"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "max_age": 3600
+    }
+})
 
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(vehicle_bp, url_prefix='/api')
@@ -37,10 +48,12 @@ app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(document_bp, url_prefix='/api')
 app.register_blueprint(email_trigger_bp, url_prefix='/api')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(test_bp)  # Registrando o novo blueprint de teste
 
 @app.route('/api/health')
 def health_check():
-    return jsonify({'status': 'ok', 'message': 'API is running'})
+    # Adicionando um comentário de teste para verificar hot-reloading
+    return jsonify({'status': 'ok', 'message': 'API está funcionando corretamente - TESTE HOT RELOAD ATUALIZADO'})
 
 
 # Configuração da base de dados
