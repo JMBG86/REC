@@ -51,42 +51,56 @@ def admin_required(f):
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """Fazer login e obter token JWT"""
-    data = request.json
-    
-    if not data or not data.get('username') or not data.get('password'):
-        return jsonify({'message': 'Username and password are required'}), 400
-    
-    user = User.query.filter_by(username=data['username']).first()
-    
-    if not user or not user.check_password(data['password']):
-        return jsonify({'message': 'Invalid credentials'}), 401
-    
-    if not user.is_active:
-        return jsonify({'message': 'Account is disabled'}), 401
-    
-    # Gerar token JWT
-    token = jwt.encode({
-        'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(hours=24)
-    }, current_app.config['SECRET_KEY'], algorithm='HS256')
-    
-    # Garantir que o token seja uma string
-    if isinstance(token, bytes):
-        token = token.decode('utf-8')
+    try:
+        data = request.json
         
-    # Preparar resposta com dados do usuário
-    user_data = user.to_dict()
-    
-    # Garantir que a resposta seja um JSON válido
-    response = jsonify({
-        'token': token,
-        'user': user_data
-    })
-    
-    # Definir cabeçalhos explícitos para evitar problemas de CORS
-    response.headers.add('Content-Type', 'application/json')
-    
-    return response
+        if not data or not data.get('username') or not data.get('password'):
+            return jsonify({'message': 'Username and password are required'}), 400
+        
+        user = User.query.filter_by(username=data['username']).first()
+        
+        if not user or not user.check_password(data['password']):
+            return jsonify({'message': 'Invalid credentials'}), 401
+        
+        if not user.is_active:
+            return jsonify({'message': 'Account is disabled'}), 401
+        
+        # Gerar token JWT
+        token = jwt.encode({
+            'user_id': user.id,
+            'exp': datetime.utcnow() + timedelta(hours=24)
+        }, current_app.config['SECRET_KEY'], algorithm='HS256')
+        
+        # Garantir que o token seja uma string
+        if isinstance(token, bytes):
+            token = token.decode('utf-8')
+            
+        # Preparar resposta com dados do usuário
+        user_data = user.to_dict()
+        
+        # Criar o objeto de resposta
+        response_data = {
+            'token': token,
+            'user': user_data
+        }
+        
+        # Garantir que a resposta seja um JSON válido
+        response = jsonify(response_data)
+        
+        # Definir cabeçalhos explícitos para evitar problemas de CORS
+        response.headers.add('Content-Type', 'application/json')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        
+        # Log para debug
+        current_app.logger.info(f"Login bem-sucedido para usuário: {user.username}")
+        current_app.logger.debug(f"Resposta JSON: {response_data}")
+        
+        return response
+    except Exception as e:
+        # Log do erro
+        current_app.logger.error(f"Erro no login: {str(e)}")
+        return jsonify({'message': f'Erro no servidor: {str(e)}'}), 500
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
