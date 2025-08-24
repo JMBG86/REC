@@ -25,6 +25,9 @@ export default function VehicleForm() {
     matricula: '',
     marca: '',
     modelo: '',
+    car_brand_id: '',
+    car_model_id: '',
+    store_location_id: '',
     vin: '',
     valor: '',
     nuipc: false,
@@ -40,12 +43,79 @@ export default function VehicleForm() {
     cliente_email: '',
     cliente_observacoes: ''
   })
+  
+  const [carBrands, setCarBrands] = useState([])
+  const [carModels, setCarModels] = useState([])
+  const [storeLocations, setStoreLocations] = useState([])
 
   useEffect(() => {
+    fetchCarBrands()
+    fetchStoreLocations()
+    
     if (isEditing) {
       fetchVehicle()
     }
   }, [id])
+  
+  // Carregar modelos quando a marca for selecionada
+  useEffect(() => {
+    if (formData.car_brand_id) {
+      fetchCarModels(formData.car_brand_id)
+    } else {
+      setCarModels([])
+    }
+  }, [formData.car_brand_id])
+
+  const fetchCarBrands = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/admin/car-brands`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setCarBrands(data.data || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar marcas:', error)
+    }
+  }
+  
+  const fetchCarModels = async (brandId) => {
+    try {
+      const response = await fetch(`${API_BASE}/admin/car-models?brand_id=${brandId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setCarModels(data.data || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar modelos:', error)
+    }
+  }
+  
+  const fetchStoreLocations = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/admin/store-locations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setStoreLocations(data.data || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar localizações:', error)
+    }
+  }
 
   const fetchVehicle = async () => {
     try {
@@ -62,6 +132,9 @@ export default function VehicleForm() {
           matricula: vehicle.matricula || '',
           marca: vehicle.marca || '',
           modelo: vehicle.modelo || '',
+          car_brand_id: vehicle.car_brand_id?.toString() || '',
+          car_model_id: vehicle.car_model_id?.toString() || '',
+          store_location_id: vehicle.store_location_id?.toString() || '',
           vin: vehicle.vin || '',
           valor: vehicle.valor || '',
           nuipc: vehicle.nuipc || false,
@@ -79,6 +152,11 @@ export default function VehicleForm() {
           cliente_email: vehicle.cliente_email || '',
           cliente_observacoes: vehicle.cliente_observacoes || ''
         })
+        
+        // Carregar modelos da marca selecionada
+        if (vehicle.car_brand_id) {
+          fetchCarModels(vehicle.car_brand_id)
+        }
       } else {
         setError('Erro ao carregar dados do veículo')
       }
@@ -205,25 +283,78 @@ export default function VehicleForm() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="marca">Marca *</Label>
-                <Input
-                  id="marca"
-                  value={formData.marca}
-                  onChange={(e) => handleInputChange('marca', e.target.value)}
-                  placeholder="BMW, Mercedes, Volkswagen..."
-                  required
-                />
+                <Label htmlFor="car_brand_id">Marca *</Label>
+                <Select
+                  value={formData.car_brand_id}
+                  onValueChange={(value) => {
+                    handleInputChange('car_brand_id', value)
+                    // Limpar o modelo quando a marca mudar
+                    handleInputChange('car_model_id', '')
+                    // Atualizar o campo de texto da marca para compatibilidade
+                    const selectedBrand = carBrands.find(brand => brand.id.toString() === value)
+                    handleInputChange('marca', selectedBrand ? selectedBrand.name : '')
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {carBrands.map(brand => (
+                      <SelectItem key={brand.id} value={brand.id.toString()}>
+                        {brand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="modelo">Modelo *</Label>
-                <Input
-                  id="modelo"
-                  value={formData.modelo}
-                  onChange={(e) => handleInputChange('modelo', e.target.value)}
-                  placeholder="Serie 3, Classe A, Golf..."
-                  required
-                />
+                <Label htmlFor="car_model_id">Modelo</Label>
+                <Select
+                  value={formData.car_model_id}
+                  onValueChange={(value) => {
+                    handleInputChange('car_model_id', value)
+                    // Atualizar o campo de texto do modelo para compatibilidade
+                    const selectedModel = carModels.find(model => model.id.toString() === value)
+                    handleInputChange('modelo', selectedModel ? selectedModel.name : '')
+                  }}
+                  disabled={!formData.car_brand_id || carModels.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um modelo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {carModels.map(model => (
+                      <SelectItem key={model.id} value={model.id.toString()}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="store_location_id">Localização da Loja *</Label>
+                <Select
+                  value={formData.store_location_id}
+                  onValueChange={(value) => {
+                    handleInputChange('store_location_id', value)
+                    // Atualizar o campo de texto da loja para compatibilidade
+                    const selectedLocation = storeLocations.find(location => location.id.toString() === value)
+                    handleInputChange('loja_aluguer', selectedLocation ? selectedLocation.nome : '')
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {storeLocations.map(location => (
+                      <SelectItem key={location.id} value={location.id.toString()}>
+                        {location.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
@@ -277,15 +408,7 @@ export default function VehicleForm() {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="loja_aluguer">Loja de Aluguer</Label>
-                <Input
-                  id="loja_aluguer"
-                  value={formData.loja_aluguer}
-                  onChange={(e) => handleInputChange('loja_aluguer', e.target.value)}
-                  placeholder="Nome da loja ou agência"
-                />
-              </div>
+              {/* Campo removido pois agora usamos o dropdown de localização */}
             </div>
 
             {/* Checkboxes e NUIPC */}

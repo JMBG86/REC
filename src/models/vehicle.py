@@ -1,12 +1,17 @@
 from src.models.user import db
 from datetime import datetime
+from src.models.car_model import CarBrand, CarModel
+from src.models.store_location import StoreLocation
 
 class Vehicle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     matricula = db.Column(db.String(20), unique=True, nullable=False, index=True)
     marca = db.Column(db.String(50), nullable=False)
-    modelo = db.Column(db.String(100), nullable=False)
-    vin = db.Column(db.String(17), unique=True, nullable=True)
+    modelo = db.Column(db.String(100), nullable=True)
+    # Comentando as colunas que não existem no banco de dados
+    # car_brand_id = db.Column(db.Integer, db.ForeignKey('car_brand.id'), nullable=True)
+    # car_model_id = db.Column(db.Integer, db.ForeignKey('car_model.id'), nullable=True)
+    vin = db.Column(db.String(17), nullable=True)
     valor = db.Column(db.Numeric(10, 2), nullable=True)
     nuipc = db.Column(db.Boolean, default=False)  # Queixa na polícia
     nuipc_numero = db.Column(db.String(50), nullable=True)  # Número da queixa NUIPC
@@ -15,7 +20,8 @@ class Vehicle(db.Model):
     data_submissao = db.Column(db.DateTime, default=datetime.utcnow)
     data_recuperacao = db.Column(db.DateTime, nullable=True)
     data_desaparecimento = db.Column(db.DateTime, nullable=True)
-    loja_aluguer = db.Column(db.String(100), nullable=True)  # Loja onde foi alugado
+    loja_aluguer = db.Column(db.String(100), nullable=True)  # Loja onde foi alugado (campo legado)
+    # store_location_id = db.Column(db.Integer, db.ForeignKey('store_location.id'), nullable=True)  # Nova referência à localização da loja
     observacoes = db.Column(db.Text, nullable=True)
     
     # Informações do cliente
@@ -31,6 +37,10 @@ class Vehicle(db.Model):
     # Relacionamentos
     atualizacoes = db.relationship('VehicleUpdate', backref='vehicle', lazy=True, cascade='all, delete-orphan')
     documentos = db.relationship('Document', backref='vehicle', lazy=True, cascade='all, delete-orphan')
+    # Comentando os relacionamentos que dependem das colunas que não existem
+    # car_brand = db.relationship('CarBrand', backref=db.backref('vehicles', lazy=True))
+    # car_model = db.relationship('CarModel', backref=db.backref('vehicles', lazy=True))
+    # store_location = db.relationship('StoreLocation', backref=db.backref('vehicles', lazy=True))
 
     def __repr__(self):
         return f'<Vehicle {self.matricula}>'
@@ -41,6 +51,13 @@ class Vehicle(db.Model):
             'matricula': self.matricula,
             'marca': self.marca,
             'modelo': self.modelo,
+            # Removendo referências às colunas que não existem
+            # 'car_brand_id': self.car_brand_id,
+            # 'car_model_id': self.car_model_id,
+            # 'car_brand_name': CarBrand.query.get(self.car_brand_id).name if self.car_brand_id else None,
+            # 'car_model_name': CarModel.query.get(self.car_model_id).name if self.car_model_id else None,
+            # 'store_location_id': self.store_location_id,
+            # 'store_location_name': StoreLocation.query.get(self.store_location_id).nome if self.store_location_id else None,
             'vin': self.vin,
             'valor': float(self.valor) if self.valor else None,
             'nuipc': self.nuipc,
