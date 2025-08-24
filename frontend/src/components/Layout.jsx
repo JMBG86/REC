@@ -12,22 +12,35 @@ import {
   Menu,
   Plus,
   Search,
-  Mail
+  Mail,
+  Settings
 } from 'lucide-react'
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Veículos', href: '/vehicles', icon: Car },
-  { name: 'Email Triggers', href: '/email-triggers', icon: Mail },
-  { name: 'Relatórios', href: '/reports', icon: FileText },
-  { name: 'Utilizadores', href: '/users', icon: Users },
-]
+const getNavigation = (user) => {
+  const baseNavigation = [
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Veículos', href: '/vehicles', icon: Car },
+    { name: 'Email Triggers', href: '/email-triggers', icon: Mail },
+    { name: 'Relatórios', href: '/reports', icon: FileText },
+    { name: 'Utilizadores', href: '/users', icon: Users },
+  ]
+  
+  // Adicionar link para o painel de administração apenas para administradores
+  if (user?.role === 'admin') {
+    baseNavigation.push({ name: 'Administração', href: '/admin', icon: Settings })
+  }
+  
+  return baseNavigation
+}
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  
+  // Obter a navegação com base no usuário
+  const navigation = getNavigation(user)
 
   const handleLogout = () => {
     logout()

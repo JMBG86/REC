@@ -11,6 +11,7 @@ import VehicleForm from './components/VehicleForm'
 import Reports from './components/Reports'
 import Users from './components/Users'
 import EmailTriggers from './components/EmailTriggers'
+import AdminPanel from './components/AdminPanel'
 import Layout from './components/Layout'
 
 // Context para autenticação
@@ -89,6 +90,13 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <EmailTriggers />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <Layout>
+                  <AdminPanel />
                 </Layout>
               </ProtectedRoute>
             } />
