@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react(),tailwindcss()],
   resolve: {
     alias: {
@@ -12,12 +12,12 @@ export default defineConfig({
     },
   },
   server: {
-    proxy: {
+    proxy: command === 'serve' ? {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false
       }
-    }
+    } : undefined
   }
-})
+}))

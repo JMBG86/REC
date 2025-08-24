@@ -15,8 +15,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [token, setToken] = useState(localStorage.getItem('token'))
 
-  // API base URL - ajustar conforme necessário
-  const API_BASE = '/api'
+  // API base URL - usando variável de ambiente
+  const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 
   useEffect(() => {
     if (token) {
