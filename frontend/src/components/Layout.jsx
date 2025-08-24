@@ -18,7 +18,7 @@ import {
 
 const getNavigation = (user) => {
   const baseNavigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Painel de Controlo', href: '/', icon: LayoutDashboard },
     { name: 'Veículos', href: '/vehicles', icon: Car },
     { name: 'Email Triggers', href: '/email-triggers', icon: Mail },
     { name: 'Relatórios', href: '/reports', icon: FileText },

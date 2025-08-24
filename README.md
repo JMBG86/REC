@@ -145,9 +145,9 @@ A base de dados é criada automaticamente na primeira execução com as seguinte
 - `rent_a_cars` - Empresas de rent-a-car
 - `email_triggers` - Triggers de email (futuro)
 
-## 📊 Dashboard
+## 📊 Painel de Controlo
 
-O dashboard apresenta:
+O Painel de Controlo apresenta:
 - Total de veículos registados
 - Casos em tratamento
 - Casos recuperados
@@ -160,7 +160,7 @@ O dashboard apresenta:
 
 ## 🚧 Problemas Conhecidos
 
-- Dashboard pode não atualizar automaticamente após criação de veículos (requer refresh)
+- Painel de Controlo pode não atualizar automaticamente após criação de veículos (requer refresh)
 - Alguns campos podem necessitar de validação adicional
 
 ## 📝 Notas de Desenvolvimento

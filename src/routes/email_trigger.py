@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request, current_app
-from src.models.rent_a_car import EmailTrigger
-from src.models.user import db
-from src.routes.auth import token_required, admin_required
-from src.services.email_service import EmailService
+from ..models.rent_a_car import EmailTrigger
+from ..models.user import db
+from .auth import token_required, admin_required
+from ..services.email_service import EmailService
 from datetime import datetime
 import os
 

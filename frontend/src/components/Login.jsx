@@ -46,7 +46,17 @@ export default function Login() {
       // Verificar se a API está acessível antes de tentar login
       console.log('Verificando CORS e disponibilidade da API...')
       try {
-        const preflightCheck = await fetch(`${API_BASE}/auth/login`, { method: 'OPTIONS' })
+        // Adiciona timestamp para evitar cache
+        const timestamp = new Date().getTime()
+        const preflightCheck = await fetch(`${API_BASE}/auth/login?_=${timestamp}`, { 
+          method: 'OPTIONS',
+          headers: {
+            'Access-Control-Request-Method': 'POST',
+            'Access-Control-Request-Headers': 'Content-Type, Authorization'
+          },
+          credentials: 'include',
+          mode: 'cors'
+        })
         console.log('Resposta do preflight:', preflightCheck.status, preflightCheck.statusText)
         console.log('Headers do preflight:', [...preflightCheck.headers.entries()])
       } catch (preflightErr) {

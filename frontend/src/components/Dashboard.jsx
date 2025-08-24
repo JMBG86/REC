@@ -15,7 +15,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
-export default function Dashboard() {
+export default function PainelDeControlo() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const { token, API_BASE } = useAuth()
@@ -54,7 +54,7 @@ export default function Dashboard() {
   if (!stats) {
     return (
       <div className="text-center text-muted-foreground">
-        Erro ao carregar dados do dashboard
+        Erro ao carregar dados do Painel de Controlo
       </div>
     )
   }
@@ -69,7 +69,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-bold">Painel de Controlo</h1>
         <p className="text-muted-foreground">Visão geral do sistema de recuperação de veículos</p>
       </div>
 

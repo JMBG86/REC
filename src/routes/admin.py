@@ -1,11 +1,11 @@
 from flask import Blueprint, jsonify, request, current_app
-from src.models.user import User, db
+from ..models.user import User, db
 # Importar diretamente do módulo específico
-from src.models.car_model.car_model import CarBrand, CarModel
-from src.models.rent_a_car import RentACar
-# Usar importação absoluta para evitar problemas no Render
-from src.models.store_location import StoreLocation
-from src.routes.auth import token_required, admin_required
+from ..models.car_model import CarBrand, CarModel
+from ..models.rent_a_car import RentACar
+# Usar importação relativa para evitar problemas no Render
+from ..models.store_location import StoreLocation
+from .auth import token_required, admin_required
 from datetime import datetime
 
 admin_bp = Blueprint('admin', __name__)

@@ -14,9 +14,11 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [token, setToken] = useState(localStorage.getItem('token'))
+  const [apiError, setApiError] = useState(null)
 
-  // API base URL - usando variável de ambiente
-  const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+  // API base URL - usando variável de ambiente ou URL direta como fallback
+  // Garantindo que sempre usamos a URL completa do backend em produção
+  const API_BASE = import.meta.env.VITE_API_BASE || 'https://rec2.onrender.com/api'
 
   useEffect(() => {
     if (token) {
@@ -24,8 +26,13 @@ export function AuthProvider({ children }) {
       console.log('Verificando token em:', `${API_BASE}/auth/me`)
       fetch(`${API_BASE}/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        credentials: 'include',
+        mode: 'cors'
       })
       .then(response => {
         console.log('Resposta da verificação do token:', response.status)
@@ -54,6 +61,7 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     try {
+      setApiError(null) // Limpa erros anteriores
       console.log('Tentando login em:', `${API_BASE}/auth/login`)
       console.log('Versão da API:', import.meta.env.VITE_API_BASE)
       console.log('Ambiente:', import.meta.env.MODE)
@@ -62,20 +70,31 @@ export function AuthProvider({ children }) {
       const requestBody = JSON.stringify({ username, password: '***' })
       console.log('Corpo da requisição:', requestBody)
       console.log('Headers da requisição:', {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       })
       
       // Fazer a requisição com logs detalhados
       console.log('Iniciando fetch para:', `${API_BASE}/auth/login`)
       const startTime = performance.now()
       
-      const response = await fetch(`${API_BASE}/auth/login`, {
+      // Adiciona um timestamp para evitar cache
+      const timestamp = new Date().getTime()
+      const url = `${API_BASE}/auth/login?_=${timestamp}`
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         },
         body: JSON.stringify({ username, password }),
-        credentials: 'include' // Tentar incluir cookies se necessário
+        credentials: 'include', // Tentar incluir cookies se necessário
+        mode: 'cors' // Garantir que estamos usando CORS
       })
       
       const endTime = performance.now()
@@ -128,7 +147,8 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
-    API_BASE
+    API_BASE,
+    apiError
   }
 
   return (

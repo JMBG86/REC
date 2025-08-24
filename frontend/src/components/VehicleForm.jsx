@@ -26,7 +26,6 @@ export default function VehicleForm() {
     marca: '',
     modelo: '',
     car_brand_id: '',
-    car_model_id: '',
     store_location_id: '',
     vin: '',
     valor: '',
@@ -45,7 +44,6 @@ export default function VehicleForm() {
   })
   
   const [carBrands, setCarBrands] = useState([])
-  const [carModels, setCarModels] = useState([])
   const [storeLocations, setStoreLocations] = useState([])
 
   useEffect(() => {
@@ -56,15 +54,6 @@ export default function VehicleForm() {
       fetchVehicle()
     }
   }, [id])
-  
-  // Carregar modelos quando a marca for selecionada
-  useEffect(() => {
-    if (formData.car_brand_id) {
-      fetchCarModels(formData.car_brand_id)
-    } else {
-      setCarModels([])
-    }
-  }, [formData.car_brand_id])
 
   const fetchCarBrands = async () => {
     try {
@@ -83,22 +72,7 @@ export default function VehicleForm() {
     }
   }
   
-  const fetchCarModels = async (brandId) => {
-    try {
-      const response = await fetch(`${API_BASE}/admin/car-models?brand_id=${brandId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setCarModels(data.data || [])
-      }
-    } catch (error) {
-      console.error('Erro ao carregar modelos:', error)
-    }
-  }
+
   
   const fetchStoreLocations = async () => {
     try {
@@ -133,7 +107,6 @@ export default function VehicleForm() {
           marca: vehicle.marca || '',
           modelo: vehicle.modelo || '',
           car_brand_id: vehicle.car_brand_id?.toString() || '',
-          car_model_id: vehicle.car_model_id?.toString() || '',
           store_location_id: vehicle.store_location_id?.toString() || '',
           vin: vehicle.vin || '',
           valor: vehicle.valor || '',
@@ -153,10 +126,7 @@ export default function VehicleForm() {
           cliente_observacoes: vehicle.cliente_observacoes || ''
         })
         
-        // Carregar modelos da marca selecionada
-        if (vehicle.car_brand_id) {
-          fetchCarModels(vehicle.car_brand_id)
-        }
+
       } else {
         setError('Erro ao carregar dados do veículo')
       }
@@ -309,28 +279,13 @@ export default function VehicleForm() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="car_model_id">Modelo</Label>
-                <Select
-                  value={formData.car_model_id}
-                  onValueChange={(value) => {
-                    handleInputChange('car_model_id', value)
-                    // Atualizar o campo de texto do modelo para compatibilidade
-                    const selectedModel = carModels.find(model => model.id.toString() === value)
-                    handleInputChange('modelo', selectedModel ? selectedModel.name : '')
-                  }}
-                  disabled={!formData.car_brand_id || carModels.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um modelo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {carModels.map(model => (
-                      <SelectItem key={model.id} value={model.id.toString()}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="modelo">Modelo</Label>
+                <Input
+                  id="modelo"
+                  value={formData.modelo}
+                  onChange={(e) => handleInputChange('modelo', e.target.value)}
+                  placeholder="Digite o modelo do veículo"
+                />
               </div>
               
               <div className="space-y-2">

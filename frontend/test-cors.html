@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de CORS e Comunicação com Backend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .warning {
+            color: orange;
+            font-weight: bold;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .network-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de CORS e Comunicação com Backend</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="openTab(event, 'direct-tests')">Testes Diretos</div>
+        <div class="tab" onclick="openTab(event, 'proxy-tests')">Testes via Proxy</div>
+        <div class="tab" onclick="openTab(event, 'network-diagnostics')">Diagnóstico de Rede</div>
+        <div class="tab" onclick="openTab(event, 'environment')">Ambiente</div>
+    </div>
+
+    <div id="direct-tests" class="tab-content active">
+        <h2>Testes Diretos (Backend)</h2>
+        
+        <div class="test-section">
+            <h3>Teste de Saúde (Health Check)</h3>
+            <button class="test-button" onclick="testDirectHealth()">Testar Health Check Direto</button>
+            <div id="direct-health-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Teste de CORS (Preflight OPTIONS)</h3>
+            <button class="test-button" onclick="testDirectCORS()">Testar CORS Direto</button>
+            <div id="direct-cors-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Teste de Login</h3>
+            <div class="input-group">
+                <label for="direct-username">Usuário:</label>
+                <input type="text" id="direct-username" value="admin">
+            </div>
+            <div class="input-group">
+                <label for="direct-password">Senha:</label>
+                <input type="password" id="direct-password" value="admin">
+            </div>
+            <button class="test-button" onclick="testDirectLogin()">Testar Login Direto</button>
+            <div id="direct-login-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+    </div>
+
+    <div id="proxy-tests" class="tab-content">
+        <h2>Testes via Proxy (Vercel)</h2>
+        
+        <div class="test-section">
+            <h3>Teste de Saúde (Health Check)</h3>
+            <button class="test-button" onclick="testProxyHealth()">Testar Health Check via Proxy</button>
+            <div id="proxy-health-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Teste de CORS (Preflight OPTIONS)</h3>
+            <button class="test-button" onclick="testProxyCORS()">Testar CORS via Proxy</button>
+            <div id="proxy-cors-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Teste de Login</h3>
+            <div class="input-group">
+                <label for="proxy-username">Usuário:</label>
+                <input type="text" id="proxy-username" value="admin">
+            </div>
+            <div class="input-group">
+                <label for="proxy-password">Senha:</label>
+                <input type="password" id="proxy-password" value="admin">
+            </div>
+            <button class="test-button" onclick="testProxyLogin()">Testar Login via Proxy</button>
+            <div id="proxy-login-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+    </div>
+
+    <div id="network-diagnostics" class="tab-content">
+        <h2>Diagnóstico de Rede</h2>
+        
+        <div class="test-section">
+            <h3>Teste de Conectividade</h3>
+            <button class="test-button" onclick="testConnectivity()">Verificar Conectividade</button>
+            <div id="connectivity-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Verificação de DNS</h3>
+            <div class="input-group">
+                <label for="dns-host">Host para verificar:</label>
+                <input type="text" id="dns-host" value="rec2.onrender.com">
+            </div>
+            <button class="test-button" onclick="checkDNS()">Verificar DNS</button>
+            <div id="dns-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Verificação de Cabeçalhos</h3>
+            <div class="input-group">
+                <label for="headers-url">URL para verificar:</label>
+                <input type="text" id="headers-url" value="https://rec2.onrender.com/api/health">
+            </div>
+            <button class="test-button" onclick="checkHeaders()">Verificar Cabeçalhos</button>
+            <div id="headers-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+    </div>
+
+    <div id="environment" class="tab-content">
+        <h2>Informações do Ambiente</h2>
+        
+        <div class="network-info">
+            <h3>Informações do Navegador</h3>
+            <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+            <p><strong>URL Atual:</strong> <span id="current-url"></span></p>
+            <p><strong>Protocolo:</strong> <span id="protocol"></span></p>
+            <p><strong>Hostname:</strong> <span id="hostname"></span></p>
+        </div>
+
+        <div class="network-info">
+            <h3>Configurações de API</h3>
+            <p><strong>API Direta:</strong> <span id="api-direct">https://rec2.onrender.com/api</span></p>
+            <p><strong>API Proxy:</strong> <span id="api-proxy">/api</span></p>
+        </div>
+
+        <div class="network-info">
+            <h3>Verificação de Variáveis de Ambiente</h3>
+            <button class="test-button" onclick="checkEnvVars()">Verificar Variáveis de Ambiente</button>
+            <div id="env-vars-result" class="result">Resultado aparecerá aqui...</div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações de API
+        const API_DIRECT = 'https://rec2.onrender.com/api';
+        const API_PROXY = '/api';
+        
+        // Função para formatar e exibir resultados
+        function displayResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            let formattedData = '';
+            
+            if (typeof data === 'object') {
+                formattedData = JSON.stringify(data, null, 2);
+            } else {
+                formattedData = data;
+            }
+            
+            if (isError) {
+                element.innerHTML = `<span class="error">ERRO:</span> ${formattedData}`;
+            } else {
+                element.innerHTML = formattedData;
+            }
+        }
+        
+        // Função para formatar resposta HTTP
+        async function formatResponse(response) {
+            const headers = {};
+            response.headers.forEach((value, key) => {
+                headers[key] = value;
+            });
+            
+            let body = 'Não foi possível ler o corpo da resposta';
+            let jsonBody = null;
+            
+            try {
+                const text = await response.text();
+                body = text;
+                
+                try {
+                    jsonBody = JSON.parse(text);
+                } catch (e) {
+                    // Não é JSON válido, usar o texto
+                }
+            } catch (e) {
+                body = `Erro ao ler corpo: ${e.message}`;
+            }
+            
+            return {
+                status: response.status,
+                statusText: response.statusText,
+                headers: headers,
+                body: jsonBody || body,
+                url: response.url,
+                type: response.type,
+                ok: response.ok
+            };
+        }
+        
+        // Função para fazer requisição com timeout
+        async function fetchWithTimeout(url, options, timeout = 10000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                throw error;
+            }
+        }
+        
+        // Testes diretos
+        async function testDirectHealth() {
+            try {
+                displayResult('direct-health-result', 'Testando...');
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`${API_DIRECT}/health`, {});
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                displayResult('direct-health-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                });
+            } catch (error) {
+                displayResult('direct-health-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        async function testDirectCORS() {
+            try {
+                displayResult('direct-cors-result', 'Testando...');
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`${API_DIRECT}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                displayResult('direct-cors-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                });
+            } catch (error) {
+                displayResult('direct-cors-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        async function testDirectLogin() {
+            try {
+                const username = document.getElementById('direct-username').value;
+                const password = document.getElementById('direct-password').value;
+                
+                displayResult('direct-login-result', 'Testando...');
+                const startTime = performance.now();
+                
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const url = `${API_DIRECT}/auth/login?_=${timestamp}`;
+                
+                const response = await fetchWithTimeout(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                displayResult('direct-login-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                });
+            } catch (error) {
+                displayResult('direct-login-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Testes via proxy
+        async function testProxyHealth() {
+            try {
+                displayResult('proxy-health-result', 'Testando...');
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`${API_PROXY}/health`, {});
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                displayResult('proxy-health-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                });
+            } catch (error) {
+                displayResult('proxy-health-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        async function testProxyCORS() {
+            try {
+                displayResult('proxy-cors-result', 'Testando...');
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`${API_PROXY}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                displayResult('proxy-cors-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                });
+            } catch (error) {
+                displayResult('proxy-cors-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        async function testProxyLogin() {
+            try {
+                const username = document.getElementById('proxy-username').value;
+                const password = document.getElementById('proxy-password').value;
+                
+                displayResult('proxy-login-result', 'Testando...');
+                const startTime = performance.now();
+                
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const url = `${API_PROXY}/auth/login?_=${timestamp}`;
+                
+                const response = await fetchWithTimeout(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                displayResult('proxy-login-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                });
+            } catch (error) {
+                displayResult('proxy-login-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Diagnóstico de rede
+        async function testConnectivity() {
+            try {
+                displayResult('connectivity-result', 'Testando conectividade...');
+                const results = {};
+                
+                // Testar conectividade com o backend direto
+                try {
+                    const startTime = performance.now();
+                    const response = await fetchWithTimeout('https://rec2.onrender.com', {}, 5000);
+                    const endTime = performance.now();
+                    results.backend = {
+                        status: response.status,
+                        time: `${(endTime - startTime).toFixed(2)}ms`,
+                        ok: response.ok
+                    };
+                } catch (error) {
+                    results.backend = {
+                        error: error.message,
+                        ok: false
+                    };
+                }
+                
+                // Testar conectividade com o Vercel
+                try {
+                    const startTime = performance.now();
+                    const response = await fetchWithTimeout('https://vercel.com', {}, 5000);
+                    const endTime = performance.now();
+                    results.vercel = {
+                        status: response.status,
+                        time: `${(endTime - startTime).toFixed(2)}ms`,
+                        ok: response.ok
+                    };
+                } catch (error) {
+                    results.vercel = {
+                        error: error.message,
+                        ok: false
+                    };
+                }
+                
+                // Testar conectividade com o Google (referência)
+                try {
+                    const startTime = performance.now();
+                    const response = await fetchWithTimeout('https://www.google.com', {}, 5000);
+                    const endTime = performance.now();
+                    results.google = {
+                        status: response.status,
+                        time: `${(endTime - startTime).toFixed(2)}ms`,
+                        ok: response.ok
+                    };
+                } catch (error) {
+                    results.google = {
+                        error: error.message,
+                        ok: false
+                    };
+                }
+                
+                displayResult('connectivity-result', results);
+            } catch (error) {
+                displayResult('connectivity-result', `Erro geral: ${error.message}`, true);
+            }
+        }
+        
+        async function checkDNS() {
+            try {
+                const host = document.getElementById('dns-host').value;
+                displayResult('dns-result', `Verificando DNS para ${host}...`);
+                
+                // Não podemos fazer uma verificação DNS direta no navegador,
+                // mas podemos tentar acessar o host e ver se funciona
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`https://${host}`, {}, 5000);
+                const endTime = performance.now();
+                
+                displayResult('dns-result', {
+                    host: host,
+                    resolved: true,
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    status: response.status,
+                    ok: response.ok
+                });
+            } catch (error) {
+                displayResult('dns-result', {
+                    host: document.getElementById('dns-host').value,
+                    resolved: false,
+                    error: error.message
+                }, true);
+            }
+        }
+        
+        async function checkHeaders() {
+            try {
+                const url = document.getElementById('headers-url').value;
+                displayResult('headers-result', `Verificando cabeçalhos para ${url}...`);
+                
+                const response = await fetchWithTimeout(url, {});
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                displayResult('headers-result', {
+                    url: url,
+                    status: response.status,
+                    headers: headers
+                });
+            } catch (error) {
+                displayResult('headers-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Verificação de variáveis de ambiente
+        function checkEnvVars() {
+            try {
+                // No navegador, não temos acesso direto às variáveis de ambiente do servidor,
+                // mas podemos verificar algumas informações do ambiente
+                const envInfo = {
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    cookiesEnabled: navigator.cookieEnabled,
+                    doNotTrack: navigator.doNotTrack,
+                    online: navigator.onLine,
+                    platform: navigator.platform,
+                    screenWidth: window.screen.width,
+                    screenHeight: window.screen.height,
+                    pixelRatio: window.devicePixelRatio,
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                };
+                
+                displayResult('env-vars-result', envInfo);
+            } catch (error) {
+                displayResult('env-vars-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Função para alternar entre abas
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            const tabs = document.getElementsByClassName('tab');
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Preencher informações do ambiente
+            document.getElementById('user-agent').textContent = navigator.userAgent;
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('api-direct').textContent = API_DIRECT;
+            document.getElementById('api-proxy').textContent = API_PROXY;
+        });
+    </script>
+</body>
+</html>

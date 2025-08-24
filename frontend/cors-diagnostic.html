@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico CORS Avançado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .header {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+        }
+        .test-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .test-button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 0 4px 4px 0;
+            overflow-x: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            border-left-color: #2ecc71;
+        }
+        .error {
+            border-left-color: #e74c3c;
+            color: #e74c3c;
+        }
+        .warning {
+            border-left-color: #f39c12;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .info-card {
+            background-color: white;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-bottom: 20px;
+        }
+        .step {
+            margin-bottom: 20px;
+            padding-left: 20px;
+            border-left: 3px solid #3498db;
+        }
+        .step h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Diagnóstico CORS Avançado</h1>
+        <p>Esta ferramenta ajuda a diagnosticar problemas de CORS entre o frontend e o backend da aplicação.</p>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="openTab(event, 'tests')">Testes CORS</div>
+        <div class="tab" onclick="openTab(event, 'diagnostics')">Diagnóstico</div>
+        <div class="tab" onclick="openTab(event, 'solutions')">Soluções</div>
+        <div class="tab" onclick="openTab(event, 'environment')">Ambiente</div>
+    </div>
+
+    <div id="tests" class="tab-content active">
+        <div class="card">
+            <h2>Testes de CORS</h2>
+            
+            <div class="test-section">
+                <h3>1. Teste de Saúde da API</h3>
+                <div class="test-options">
+                    <button class="test-button" onclick="testDirectHealth()">Testar API Direta</button>
+                    <button class="test-button" onclick="testProxyHealth()">Testar via Proxy</button>
+                </div>
+                <div id="health-result" class="result">Resultado aparecerá aqui...</div>
+            </div>
+
+            <div class="test-section">
+                <h3>2. Teste de Preflight CORS (OPTIONS)</h3>
+                <div class="test-options">
+                    <button class="test-button" onclick="testDirectCORS()">Testar API Direta</button>
+                    <button class="test-button" onclick="testProxyCORS()">Testar via Proxy</button>
+                </div>
+                <div id="cors-result" class="result">Resultado aparecerá aqui...</div>
+            </div>
+
+            <div class="test-section">
+                <h3>3. Teste de Login</h3>
+                <div class="input-group">
+                    <label for="username">Usuário:</label>
+                    <input type="text" id="username" value="admin" />
+                    <label for="password">Senha:</label>
+                    <input type="password" id="password" value="admin" />
+                </div>
+                <div class="test-options">
+                    <button class="test-button" onclick="testDirectLogin()">Testar API Direta</button>
+                    <button class="test-button" onclick="testProxyLogin()">Testar via Proxy</button>
+                </div>
+                <div id="login-result" class="result">Resultado aparecerá aqui...</div>
+            </div>
+
+            <div class="test-section">
+                <h3>4. Teste de Cabeçalhos</h3>
+                <div class="test-options">
+                    <button class="test-button" onclick="testHeaders('direct')">Verificar Cabeçalhos API Direta</button>
+                    <button class="test-button" onclick="testHeaders('proxy')">Verificar Cabeçalhos Proxy</button>
+                </div>
+                <div id="headers-result" class="result">Resultado aparecerá aqui...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="diagnostics" class="tab-content">
+        <div class="card">
+            <h2>Diagnóstico de Problemas</h2>
+            
+            <div class="test-section">
+                <h3>Verificação de Conectividade</h3>
+                <button class="test-button" onclick="testConnectivity()">Verificar Conectividade</button>
+                <div id="connectivity-result" class="result">Resultado aparecerá aqui...</div>
+            </div>
+
+            <div class="test-section">
+                <h3>Verificação de Configurações CORS</h3>
+                <button class="test-button" onclick="analyzeCORSConfig()">Analisar Configurações CORS</button>
+                <div id="cors-config-result" class="result">Resultado aparecerá aqui...</div>
+            </div>
+
+            <div class="test-section">
+                <h3>Verificação de Cookies e Credenciais</h3>
+                <button class="test-button" onclick="checkCredentials()">Verificar Cookies e Credenciais</button>
+                <div id="credentials-result" class="result">Resultado aparecerá aqui...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="solutions" class="tab-content">
+        <div class="card">
+            <h2>Soluções Comuns para Problemas de CORS</h2>
+            
+            <div class="step">
+                <h3>1. Configuração do Backend (Flask)</h3>
+                <p>Verifique se o CORS está configurado corretamente no backend:</p>
+                <div class="code-block">from flask_cors import CORS
+
+# Opção 1: Permitir todas as origens (menos seguro)
+CORS(app, origins="*", supports_credentials=True)
+
+# Opção 2: Permitir origens específicas (mais seguro)
+CORS(app, origins=["https://seu-frontend.vercel.app"], supports_credentials=True)</div>
+                <p><strong>Importante:</strong> Se você usar <code>supports_credentials=True</code>, não pode usar <code>origins="*"</code>. Nesse caso, você deve especificar as origens exatas.</p>
+            </div>
+
+            <div class="step">
+                <h3>2. Configuração do Frontend (Fetch API)</h3>
+                <p>Certifique-se de que as requisições do frontend estão configuradas corretamente:</p>
+                <div class="code-block">fetch('https://api.exemplo.com/endpoint', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  credentials: 'include',  // Importante para enviar cookies
+  mode: 'cors',           // Explicitamente usar CORS
+  body: JSON.stringify(data)
+})</div>
+            </div>
+
+            <div class="step">
+                <h3>3. Configuração do Vercel (vercel.json)</h3>
+                <p>Para aplicações hospedadas no Vercel, configure os cabeçalhos CORS no arquivo vercel.json:</p>
+                <div class="code-block">{
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://seu-frontend.vercel.app" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
+      ]
+    }
+  ]
+}</div>
+                <p><strong>Nota:</strong> Se você estiver usando credenciais, deve especificar a origem exata em vez de usar "*".</p>
+            </div>
+
+            <div class="step">
+                <h3>4. Problemas com Cookies e Credenciais</h3>
+                <p>Se você estiver usando cookies ou autenticação baseada em sessão:</p>
+                <ul>
+                    <li>No backend: Defina <code>supports_credentials=True</code> na configuração do CORS</li>
+                    <li>No frontend: Use <code>credentials: 'include'</code> nas requisições fetch</li>
+                    <li>Certifique-se de que os cookies estão configurados com <code>SameSite=None; Secure</code> se estiver em HTTPS</li>
+                    <li>Não use <code>Access-Control-Allow-Origin: *</code> quando estiver usando credenciais</li>
+                </ul>
+            </div>
+
+            <div class="step">
+                <h3>5. Usando um Proxy Reverso</h3>
+                <p>Se você não conseguir modificar o backend, considere usar um proxy reverso:</p>
+                <ul>
+                    <li>Configure o Vercel para redirecionar solicitações para o backend</li>
+                    <li>Use o arquivo vercel.json para configurar reescritas:</li>
+                </ul>
+                <div class="code-block">{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://seu-backend.com/api/:path*" }
+  ]
+}</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="environment" class="tab-content">
+        <div class="card">
+            <h2>Informações do Ambiente</h2>
+            
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Navegador</h3>
+                    <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+                    <p><strong>URL Atual:</strong> <span id="current-url"></span></p>
+                    <p><strong>Protocolo:</strong> <span id="protocol"></span></p>
+                    <p><strong>Hostname:</strong> <span id="hostname"></span></p>
+                </div>
+
+                <div class="info-card">
+                    <h3>Configurações de API</h3>
+                    <p><strong>API Direta:</strong> <span id="api-direct">https://rec2.onrender.com/api</span></p>
+                    <p><strong>API Proxy:</strong> <span id="api-proxy">/api</span></p>
+                </div>
+
+                <div class="info-card">
+                    <h3>Configurações CORS</h3>
+                    <p><strong>Backend (Flask):</strong> <code>CORS(app, origins="*")</code></p>
+                    <p><strong>Frontend (Vercel):</strong> Configurado via vercel.json</p>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3>Verificação de Variáveis de Ambiente</h3>
+                <button class="test-button" onclick="checkEnvVars()">Verificar Variáveis de Ambiente</button>
+                <div id="env-vars-result" class="result">Resultado aparecerá aqui...</div>
+            </div>
+
+            <div class="test-section">
+                <h3>Configurações Atuais</h3>
+                <table>
+                    <tr>
+                        <th>Componente</th>
+                        <th>Configuração</th>
+                        <th>Status</th>
+                    </tr>
+                    <tr>
+                        <td>Backend CORS</td>
+                        <td><code>CORS(app, origins="*")</code></td>
+                        <td id="backend-cors-status">Pendente</td>
+                    </tr>
+                    <tr>
+                        <td>Vercel Proxy</td>
+                        <td><code>{ "source": "/api/:path*", "destination": "https://rec2.onrender.com/api/:path*" }</code></td>
+                        <td id="vercel-proxy-status">Pendente</td>
+                    </tr>
+                    <tr>
+                        <td>Vercel CORS Headers</td>
+                        <td><code>Access-Control-Allow-Origin: *</code></td>
+                        <td id="vercel-cors-status">Pendente</td>
+                    </tr>
+                    <tr>
+                        <td>Credenciais</td>
+                        <td><code>credentials: 'include'</code></td>
+                        <td id="credentials-status">Pendente</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações de API
+        const API_DIRECT = 'https://rec2.onrender.com/api';
+        const API_PROXY = '/api';
+        
+        // Função para formatar e exibir resultados
+        function displayResult(elementId, data, isError = false, isSuccess = false) {
+            const element = document.getElementById(elementId);
+            let formattedData = '';
+            
+            if (typeof data === 'object') {
+                formattedData = JSON.stringify(data, null, 2);
+            } else {
+                formattedData = data;
+            }
+            
+            element.className = 'result';
+            if (isError) {
+                element.classList.add('error');
+                element.innerHTML = `<span class="error">ERRO:</span> ${formattedData}`;
+            } else if (isSuccess) {
+                element.classList.add('success');
+                element.innerHTML = `<span class="success">SUCESSO:</span> ${formattedData}`;
+            } else {
+                element.innerHTML = formattedData;
+            }
+        }
+        
+        // Função para formatar resposta HTTP
+        async function formatResponse(response) {
+            const headers = {};
+            response.headers.forEach((value, key) => {
+                headers[key] = value;
+            });
+            
+            let body = 'Não foi possível ler o corpo da resposta';
+            let jsonBody = null;
+            
+            try {
+                const text = await response.text();
+                body = text;
+                
+                try {
+                    jsonBody = JSON.parse(text);
+                } catch (e) {
+                    // Não é JSON válido, usar o texto
+                }
+            } catch (e) {
+                body = `Erro ao ler corpo: ${e.message}`;
+            }
+            
+            return {
+                status: response.status,
+                statusText: response.statusText,
+                headers: headers,
+                body: jsonBody || body,
+                url: response.url,
+                type: response.type,
+                ok: response.ok
+            };
+        }
+        
+        // Função para fazer requisição com timeout
+        async function fetchWithTimeout(url, options, timeout = 10000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                throw error;
+            }
+        }
+        
+        // Testes de saúde
+        async function testDirectHealth() {
+            try {
+                displayResult('health-result', 'Testando API direta...');
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`${API_DIRECT}/health`, {});
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                const isSuccess = response.ok;
+                displayResult('health-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                }, !isSuccess, isSuccess);
+                
+                // Atualizar status na tabela
+                if (isSuccess) {
+                    document.getElementById('backend-cors-status').innerHTML = '<span style="color: green">Funcionando</span>';
+                } else {
+                    document.getElementById('backend-cors-status').innerHTML = '<span style="color: red">Falha</span>';
+                }
+            } catch (error) {
+                displayResult('health-result', `Erro: ${error.message}`, true);
+                document.getElementById('backend-cors-status').innerHTML = '<span style="color: red">Falha</span>';
+            }
+        }
+        
+        async function testProxyHealth() {
+            try {
+                displayResult('health-result', 'Testando API via proxy...');
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`${API_PROXY}/health`, {});
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                const isSuccess = response.ok;
+                displayResult('health-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                }, !isSuccess, isSuccess);
+                
+                // Atualizar status na tabela
+                if (isSuccess) {
+                    document.getElementById('vercel-proxy-status').innerHTML = '<span style="color: green">Funcionando</span>';
+                } else {
+                    document.getElementById('vercel-proxy-status').innerHTML = '<span style="color: red">Falha</span>';
+                }
+            } catch (error) {
+                displayResult('health-result', `Erro: ${error.message}`, true);
+                document.getElementById('vercel-proxy-status').innerHTML = '<span style="color: red">Falha</span>';
+            }
+        }
+        
+        // Testes de CORS
+        async function testDirectCORS() {
+            try {
+                displayResult('cors-result', 'Testando preflight CORS direto...');
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`${API_DIRECT}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                // Verificar se os cabeçalhos CORS estão presentes
+                const corsHeaders = {
+                    'access-control-allow-origin': formattedResponse.headers['access-control-allow-origin'],
+                    'access-control-allow-methods': formattedResponse.headers['access-control-allow-methods'],
+                    'access-control-allow-headers': formattedResponse.headers['access-control-allow-headers'],
+                    'access-control-allow-credentials': formattedResponse.headers['access-control-allow-credentials']
+                };
+                
+                const isSuccess = response.ok && corsHeaders['access-control-allow-origin'];
+                displayResult('cors-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    corsHeaders: corsHeaders,
+                    response: formattedResponse
+                }, !isSuccess, isSuccess);
+                
+                // Atualizar status na tabela
+                if (isSuccess) {
+                    document.getElementById('backend-cors-status').innerHTML = '<span style="color: green">Funcionando</span>';
+                } else {
+                    document.getElementById('backend-cors-status').innerHTML = '<span style="color: red">Falha</span>';
+                }
+            } catch (error) {
+                displayResult('cors-result', `Erro: ${error.message}`, true);
+                document.getElementById('backend-cors-status').innerHTML = '<span style="color: red">Falha</span>';
+            }
+        }
+        
+        async function testProxyCORS() {
+            try {
+                displayResult('cors-result', 'Testando preflight CORS via proxy...');
+                const startTime = performance.now();
+                const response = await fetchWithTimeout(`${API_PROXY}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                // Verificar se os cabeçalhos CORS estão presentes
+                const corsHeaders = {
+                    'access-control-allow-origin': formattedResponse.headers['access-control-allow-origin'],
+                    'access-control-allow-methods': formattedResponse.headers['access-control-allow-methods'],
+                    'access-control-allow-headers': formattedResponse.headers['access-control-allow-headers'],
+                    'access-control-allow-credentials': formattedResponse.headers['access-control-allow-credentials']
+                };
+                
+                const isSuccess = response.ok && corsHeaders['access-control-allow-origin'];
+                displayResult('cors-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    corsHeaders: corsHeaders,
+                    response: formattedResponse
+                }, !isSuccess, isSuccess);
+                
+                // Atualizar status na tabela
+                if (isSuccess) {
+                    document.getElementById('vercel-cors-status').innerHTML = '<span style="color: green">Funcionando</span>';
+                } else {
+                    document.getElementById('vercel-cors-status').innerHTML = '<span style="color: red">Falha</span>';
+                }
+            } catch (error) {
+                displayResult('cors-result', `Erro: ${error.message}`, true);
+                document.getElementById('vercel-cors-status').innerHTML = '<span style="color: red">Falha</span>';
+            }
+        }
+        
+        // Testes de login
+        async function testDirectLogin() {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                displayResult('login-result', 'Testando login direto...');
+                const startTime = performance.now();
+                
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const url = `${API_DIRECT}/auth/login?_=${timestamp}`;
+                
+                const response = await fetchWithTimeout(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                const isSuccess = response.ok;
+                displayResult('login-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                }, !isSuccess, isSuccess);
+                
+                // Atualizar status na tabela
+                if (isSuccess) {
+                    document.getElementById('credentials-status').innerHTML = '<span style="color: green">Funcionando</span>';
+                }
+            } catch (error) {
+                displayResult('login-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        async function testProxyLogin() {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                displayResult('login-result', 'Testando login via proxy...');
+                const startTime = performance.now();
+                
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const url = `${API_PROXY}/auth/login?_=${timestamp}`;
+                
+                const response = await fetchWithTimeout(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                const endTime = performance.now();
+                const formattedResponse = await formatResponse(response);
+                
+                const isSuccess = response.ok;
+                displayResult('login-result', {
+                    time: `${(endTime - startTime).toFixed(2)}ms`,
+                    response: formattedResponse
+                }, !isSuccess, isSuccess);
+                
+                // Atualizar status na tabela
+                if (isSuccess) {
+                    document.getElementById('credentials-status').innerHTML = '<span style="color: green">Funcionando</span>';
+                }
+            } catch (error) {
+                displayResult('login-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Teste de cabeçalhos
+        async function testHeaders(type) {
+            try {
+                const url = type === 'direct' ? `${API_DIRECT}/health` : `${API_PROXY}/health`;
+                displayResult('headers-result', `Verificando cabeçalhos para ${url}...`);
+                
+                const response = await fetchWithTimeout(url, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                // Destacar cabeçalhos CORS
+                const corsHeaders = {};
+                Object.keys(headers).forEach(key => {
+                    if (key.toLowerCase().startsWith('access-control')) {
+                        corsHeaders[key] = headers[key];
+                    }
+                });
+                
+                displayResult('headers-result', {
+                    url: url,
+                    status: response.status,
+                    corsHeaders: corsHeaders,
+                    allHeaders: headers
+                });
+            } catch (error) {
+                displayResult('headers-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Diagnóstico de conectividade
+        async function testConnectivity() {
+            try {
+                displayResult('connectivity-result', 'Testando conectividade...');
+                const results = {};
+                
+                // Testar conectividade com o backend direto
+                try {
+                    const startTime = performance.now();
+                    const response = await fetchWithTimeout('https://rec2.onrender.com', {}, 5000);
+                    const endTime = performance.now();
+                    results.backend = {
+                        status: response.status,
+                        time: `${(endTime - startTime).toFixed(2)}ms`,
+                        ok: response.ok
+                    };
+                } catch (error) {
+                    results.backend = {
+                        error: error.message,
+                        ok: false
+                    };
+                }
+                
+                // Testar conectividade com o Vercel
+                try {
+                    const startTime = performance.now();
+                    const response = await fetchWithTimeout('https://vercel.com', {}, 5000);
+                    const endTime = performance.now();
+                    results.vercel = {
+                        status: response.status,
+                        time: `${(endTime - startTime).toFixed(2)}ms`,
+                        ok: response.ok
+                    };
+                } catch (error) {
+                    results.vercel = {
+                        error: error.message,
+                        ok: false
+                    };
+                }
+                
+                // Testar conectividade com o Google (referência)
+                try {
+                    const startTime = performance.now();
+                    const response = await fetchWithTimeout('https://www.google.com', {}, 5000);
+                    const endTime = performance.now();
+                    results.google = {
+                        status: response.status,
+                        time: `${(endTime - startTime).toFixed(2)}ms`,
+                        ok: response.ok
+                    };
+                } catch (error) {
+                    results.google = {
+                        error: error.message,
+                        ok: false
+                    };
+                }
+                
+                displayResult('connectivity-result', results);
+            } catch (error) {
+                displayResult('connectivity-result', `Erro geral: ${error.message}`, true);
+            }
+        }
+        
+        // Análise de configurações CORS
+        async function analyzeCORSConfig() {
+            try {
+                displayResult('cors-config-result', 'Analisando configurações CORS...');
+                
+                // Testar backend direto
+                let backendCorsStatus = 'Desconhecido';
+                try {
+                    const response = await fetchWithTimeout(`${API_DIRECT}/auth/login`, {
+                        method: 'OPTIONS',
+                        headers: {
+                            'Origin': window.location.origin,
+                            'Access-Control-Request-Method': 'POST',
+                            'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                        }
+                    });
+                    
+                    const corsHeaders = {};
+                    response.headers.forEach((value, key) => {
+                        if (key.toLowerCase().startsWith('access-control')) {
+                            corsHeaders[key.toLowerCase()] = value;
+                        }
+                    });
+                    
+                    if (corsHeaders['access-control-allow-origin']) {
+                        backendCorsStatus = 'Configurado';
+                        if (corsHeaders['access-control-allow-origin'] === '*') {
+                            backendCorsStatus += ' (Todas as origens permitidas)';
+                        } else if (corsHeaders['access-control-allow-origin'] === window.location.origin) {
+                            backendCorsStatus += ` (Origem ${window.location.origin} permitida)`;
+                        } else {
+                            backendCorsStatus += ` (Origem ${corsHeaders['access-control-allow-origin']} permitida)`;
+                        }
+                    } else {
+                        backendCorsStatus = 'Não configurado';
+                    }
+                } catch (error) {
+                    backendCorsStatus = `Erro: ${error.message}`;
+                }
+                
+                // Testar proxy Vercel
+                let vercelCorsStatus = 'Desconhecido';
+                try {
+                    const response = await fetchWithTimeout(`${API_PROXY}/auth/login`, {
+                        method: 'OPTIONS',
+                        headers: {
+                            'Origin': window.location.origin,
+                            'Access-Control-Request-Method': 'POST',
+                            'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                        }
+                    });
+                    
+                    const corsHeaders = {};
+                    response.headers.forEach((value, key) => {
+                        if (key.toLowerCase().startsWith('access-control')) {
+                            corsHeaders[key.toLowerCase()] = value;
+                        }
+                    });
+                    
+                    if (corsHeaders['access-control-allow-origin']) {
+                        vercelCorsStatus = 'Configurado';
+                        if (corsHeaders['access-control-allow-origin'] === '*') {
+                            vercelCorsStatus += ' (Todas as origens permitidas)';
+                        } else if (corsHeaders['access-control-allow-origin'] === window.location.origin) {
+                            vercelCorsStatus += ` (Origem ${window.location.origin} permitida)`;
+                        } else {
+                            vercelCorsStatus += ` (Origem ${corsHeaders['access-control-allow-origin']} permitida)`;
+                        }
+                    } else {
+                        vercelCorsStatus = 'Não configurado';
+                    }
+                } catch (error) {
+                    vercelCorsStatus = `Erro: ${error.message}`;
+                }
+                
+                // Verificar se há conflito entre as configurações
+                let conflictStatus = 'Sem conflitos detectados';
+                if (backendCorsStatus.includes('Configurado') && vercelCorsStatus.includes('Configurado')) {
+                    if (backendCorsStatus.includes('Todas as origens permitidas') && !vercelCorsStatus.includes('Todas as origens permitidas')) {
+                        conflictStatus = 'Possível conflito: Backend permite todas as origens, mas Vercel restringe';
+                    } else if (!backendCorsStatus.includes('Todas as origens permitidas') && vercelCorsStatus.includes('Todas as origens permitidas')) {
+                        conflictStatus = 'Possível conflito: Vercel permite todas as origens, mas Backend restringe';
+                    }
+                }
+                
+                // Verificar se credentials está configurado corretamente
+                let credentialsStatus = 'Desconhecido';
+                try {
+                    const backendResponse = await fetchWithTimeout(`${API_DIRECT}/auth/login`, {
+                        method: 'OPTIONS',
+                        headers: {
+                            'Origin': window.location.origin,
+                            'Access-Control-Request-Method': 'POST',
+                            'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                        }
+                    });
+                    
+                    const allowCredentials = backendResponse.headers.get('access-control-allow-credentials');
+                    if (allowCredentials === 'true') {
+                        credentialsStatus = 'Configurado corretamente';
+                        
+                        // Verificar se há conflito com Access-Control-Allow-Origin: *
+                        const allowOrigin = backendResponse.headers.get('access-control-allow-origin');
+                        if (allowOrigin === '*') {
+                            credentialsStatus = 'ERRO: Access-Control-Allow-Credentials: true não pode ser usado com Access-Control-Allow-Origin: *';
+                        }
+                    } else {
+                        credentialsStatus = 'Não configurado ou incorreto';
+                    }
+                } catch (error) {
+                    credentialsStatus = `Erro: ${error.message}`;
+                }
+                
+                displayResult('cors-config-result', {
+                    backendCors: backendCorsStatus,
+                    vercelCors: vercelCorsStatus,
+                    conflict: conflictStatus,
+                    credentials: credentialsStatus,
+                    recommendation: generateRecommendation(backendCorsStatus, vercelCorsStatus, credentialsStatus)
+                });
+            } catch (error) {
+                displayResult('cors-config-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Gerar recomendação com base na análise
+        function generateRecommendation(backendStatus, vercelStatus, credentialsStatus) {
+            const recommendations = [];
+            
+            if (!backendStatus.includes('Configurado')) {
+                recommendations.push('Configure o CORS no backend Flask usando: CORS(app, origins=["https://seu-frontend.vercel.app"], supports_credentials=True)');
+            }
+            
+            if (backendStatus.includes('Todas as origens permitidas') && credentialsStatus.includes('ERRO')) {
+                recommendations.push('No backend, não use origins="*" junto com supports_credentials=True. Em vez disso, especifique as origens exatas.');
+            }
+            
+            if (!vercelStatus.includes('Configurado')) {
+                recommendations.push('Configure os cabeçalhos CORS no arquivo vercel.json para o proxy /api.');
+            }
+            
+            if (credentialsStatus.includes('Não configurado')) {
+                recommendations.push('Configure Access-Control-Allow-Credentials: true no backend e use credentials: "include" nas requisições fetch do frontend.');
+            }
+            
+            if (recommendations.length === 0) {
+                if (backendStatus.includes('Configurado') && vercelStatus.includes('Configurado') && credentialsStatus.includes('Configurado corretamente')) {
+                    return ['A configuração CORS parece estar correta. Se ainda houver problemas, verifique outros aspectos como cache do navegador ou firewalls.'];
+                } else {
+                    return ['Não foi possível determinar recomendações específicas. Verifique manualmente as configurações CORS.'];
+                }
+            }
+            
+            return recommendations;
+        }
+        
+        // Verificação de cookies e credenciais
+        async function checkCredentials() {
+            try {
+                displayResult('credentials-result', 'Verificando configuração de credenciais...');
+                
+                // Verificar se o navegador suporta cookies
+                const cookiesEnabled = navigator.cookieEnabled;
+                
+                // Verificar se o backend está configurado para aceitar credenciais
+                let backendCredentials = 'Desconhecido';
+                try {
+                    const response = await fetchWithTimeout(`${API_DIRECT}/auth/login`, {
+                        method: 'OPTIONS',
+                        headers: {
+                            'Origin': window.location.origin,
+                            'Access-Control-Request-Method': 'POST',
+                            'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                        }
+                    });
+                    
+                    const allowCredentials = response.headers.get('access-control-allow-credentials');
+                    if (allowCredentials === 'true') {
+                        backendCredentials = 'Configurado (Access-Control-Allow-Credentials: true)';
+                    } else {
+                        backendCredentials = 'Não configurado';
+                    }
+                } catch (error) {
+                    backendCredentials = `Erro: ${error.message}`;
+                }
+                
+                // Verificar se o proxy Vercel está configurado para aceitar credenciais
+                let vercelCredentials = 'Desconhecido';
+                try {
+                    const response = await fetchWithTimeout(`${API_PROXY}/auth/login`, {
+                        method: 'OPTIONS',
+                        headers: {
+                            'Origin': window.location.origin,
+                            'Access-Control-Request-Method': 'POST',
+                            'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                        }
+                    });
+                    
+                    const allowCredentials = response.headers.get('access-control-allow-credentials');
+                    if (allowCredentials === 'true') {
+                        vercelCredentials = 'Configurado (Access-Control-Allow-Credentials: true)';
+                    } else {
+                        vercelCredentials = 'Não configurado';
+                    }
+                } catch (error) {
+                    vercelCredentials = `Erro: ${error.message}`;
+                }
+                
+                // Verificar se o frontend está configurado para enviar credenciais
+                const frontendCode = document.querySelector('script');
+                const usesCredentialsInclude = frontendCode && frontendCode.textContent.includes('credentials: \'include\'');
+                
+                displayResult('credentials-result', {
+                    browserCookies: cookiesEnabled ? 'Habilitados' : 'Desabilitados',
+                    backendCredentials: backendCredentials,
+                    vercelCredentials: vercelCredentials,
+                    frontendCredentials: usesCredentialsInclude ? 'Configurado (credentials: \'include\')' : 'Não detectado',
+                    recommendation: generateCredentialsRecommendation(cookiesEnabled, backendCredentials, vercelCredentials, usesCredentialsInclude)
+                });
+            } catch (error) {
+                displayResult('credentials-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Gerar recomendação para credenciais
+        function generateCredentialsRecommendation(cookiesEnabled, backendCredentials, vercelCredentials, usesCredentialsInclude) {
+            const recommendations = [];
+            
+            if (!cookiesEnabled) {
+                recommendations.push('Os cookies estão desabilitados no navegador. Habilite-os para usar autenticação baseada em cookies.');
+            }
+            
+            if (!backendCredentials.includes('Configurado')) {
+                recommendations.push('Configure o backend para aceitar credenciais: CORS(app, supports_credentials=True)');
+            }
+            
+            if (!vercelCredentials.includes('Configurado')) {
+                recommendations.push('Configure o Vercel para aceitar credenciais: Adicione "Access-Control-Allow-Credentials": "true" nos cabeçalhos do vercel.json');
+            }
+            
+            if (!usesCredentialsInclude) {
+                recommendations.push('Configure o frontend para enviar credenciais: Adicione credentials: \'include\' nas requisições fetch');
+            }
+            
+            if (recommendations.length === 0) {
+                return ['A configuração de credenciais parece estar correta.'];
+            }
+            
+            return recommendations;
+        }
+        
+        // Verificação de variáveis de ambiente
+        function checkEnvVars() {
+            try {
+                // No navegador, não temos acesso direto às variáveis de ambiente do servidor,
+                // mas podemos verificar algumas informações do ambiente
+                const envInfo = {
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    cookiesEnabled: navigator.cookieEnabled,
+                    doNotTrack: navigator.doNotTrack,
+                    online: navigator.onLine,
+                    platform: navigator.platform,
+                    screenWidth: window.screen.width,
+                    screenHeight: window.screen.height,
+                    pixelRatio: window.devicePixelRatio,
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    protocol: window.location.protocol,
+                    hostname: window.location.hostname,
+                    port: window.location.port || (window.location.protocol === 'https:' ? '443' : '80'),
+                    apiDirect: API_DIRECT,
+                    apiProxy: API_PROXY
+                };
+                
+                displayResult('env-vars-result', envInfo);
+            } catch (error) {
+                displayResult('env-vars-result', `Erro: ${error.message}`, true);
+            }
+        }
+        
+        // Função para alternar entre abas
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            const tabs = document.getElementsByClassName('tab');
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Preencher informações do ambiente
+            document.getElementById('user-agent').textContent = navigator.userAgent;
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('api-direct').textContent = API_DIRECT;
+            document.getElementById('api-proxy').textContent = API_PROXY;
+        });
+    </script>
+</body>
+</html>

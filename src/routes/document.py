@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request, send_file, current_app
 from werkzeug.utils import secure_filename
-from src.models.user import db
-from src.models.vehicle import Vehicle, Document
-from src.routes.auth import token_required
+from ..models.user import db
+from ..models.vehicle import Vehicle, Document
+from .auth import token_required
 import os
 import uuid
 from datetime import datetime
