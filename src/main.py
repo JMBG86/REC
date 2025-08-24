@@ -33,7 +33,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 # Configurar CORS para permitir requests do frontend com credenciais
 cors = CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-frontend.vercel.app", "https://rec-frontend-uha5.onrender.com", "https://rec-frontend.onrender.com", "https://rec-frontend-new.onrender.com", "*"],
+        "origins": ["http://localhost:3000", "http://localhost:5173", "https://rec-frontend.vercel.app", "https://rec-frontend-uha5.onrender.com", "https://rec-frontend.onrender.com", "https://rec-frontend-new.onrender.com"],
         "supports_credentials": True,
         "allow_headers": ["Content-Type", "Authorization"],
         "expose_headers": ["Content-Type", "Authorization"],

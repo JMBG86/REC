@@ -6,12 +6,12 @@
 // Determina a URL base da API com base no ambiente
 const getApiBaseUrl = () => {
   // Em desenvolvimento, usa o proxy configurado no vite.config.js
-  if (window.location.port === '5173') {
+  if (window.location.port === '5173' || window.location.port === '3000') {
     return '/api';
   }
   
-  // Em outros casos, usa a variável de ambiente
-  return import.meta.env.VITE_API_BASE || 'https://rec-backend-ub72.onrender.com/api';
+  // Em produção, prioriza a variável de ambiente
+  return import.meta.env.VITE_API_BASE || 'https://rec-ub72.onrender.com/api';
 };
 
 // URL base da API
