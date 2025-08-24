@@ -10,8 +10,8 @@ const getApiBaseUrl = () => {
     return '/api';
   }
   
-  // Em outros casos, usa a variável de ambiente ou o fallback
-  return import.meta.env.VITE_API_BASE || 'https://rec2.onrender.com/api';
+  // Em outros casos, usa a variável de ambiente
+  return import.meta.env.VITE_API_BASE || 'https://rec-ub72.onrender.com/api';
 };
 
 // URL base da API
