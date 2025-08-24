@@ -15,17 +15,28 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const { user, login, API_BASE } = useAuth()
   
-  // Log para verificar a URL da API
+  // Log para verificar a URL da API e testar a conexão com o backend
   useEffect(() => {
     console.log('URL da API configurada:', API_BASE)
     // Testar a conexão com o backend
-    fetch(`${API_BASE}/health`, { method: 'GET' })
+    fetch(`${API_BASE}/health`, { 
+      method: 'GET',
+      credentials: 'same-origin', // Importante para cookies de sessão no mesmo servidor
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
       .then(response => {
         console.log('Teste de conexão com backend:', response.status, response.statusText)
         return response.text()
       })
       .then(data => console.log('Resposta do teste de conexão:', data))
-      .catch(err => console.error('Erro no teste de conexão com backend:', err))
+      .catch(err => {
+        console.error('Erro no teste de conexão com backend:', err)
+        console.log('Detalhes do erro:', JSON.stringify(err))
+      })
   }, [API_BASE])
 
   // Se já está logado, redirecionar
@@ -39,19 +50,22 @@ export default function Login() {
     setError('')
     
     console.log('Iniciando processo de login')
+    console.log('URL da API para login:', `${API_BASE}/auth/login`)
     
     try {
       console.log('Enviando requisição de login...')
       const result = await login(username, password)
       
       if (!result.success) {
+        console.error('Falha no login:', result.error)
         setError(result.error || 'Falha na autenticação. Tente novamente.')
       } else {
         console.log('Login bem-sucedido!')
       }
     } catch (err) {
       console.error('Erro no processo de login:', err)
-      setError('Erro inesperado. Tente novamente mais tarde.')
+      console.log('Detalhes do erro:', JSON.stringify(err))
+      setError('Erro inesperado. Tente novamente mais tarde. Verifique o console para mais detalhes.')
     } finally {
       setLoading(false)
     }

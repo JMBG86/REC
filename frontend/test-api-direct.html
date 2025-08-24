@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Conexão Direta com API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Conexão Direta com API</h1>
+    
+    <div class="form-group">
+        <label for="apiUrl">URL da API:</label>
+        <input type="text" id="apiUrl" value="/api" />
+    </div>
+
+    <div>
+        <button onclick="testHealth()">Testar Health</button>
+        <button onclick="testLogin()">Testar Login</button>
+    </div>
+
+    <div class="form-group">
+        <label for="username">Nome de usuário:</label>
+        <input type="text" id="username" value="admin" />
+    </div>
+
+    <div class="form-group">
+        <label for="password">Senha:</label>
+        <input type="password" id="password" value="admin" />
+    </div>
+
+    <h2>Resultado:</h2>
+    <div id="result" class="result">Os resultados dos testes aparecerão aqui...</div>
+
+    <script>
+        // Função para mostrar resultados
+        function showResult(message, isError = false) {
+            const resultElement = document.getElementById('result');
+            if (isError) {
+                resultElement.style.color = 'red';
+                resultElement.style.backgroundColor = '#ffeeee';
+            } else {
+                resultElement.style.color = 'black';
+                resultElement.style.backgroundColor = '#f9f9f9';
+            }
+            resultElement.textContent = message;
+        }
+
+        // Função para testar o endpoint de health
+        async function testHealth() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            showResult('Testando conexão com ' + apiUrl + '/health...');
+            
+            try {
+                const response = await fetch(`${apiUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                const status = `Status: ${response.status} ${response.statusText}`;
+                const data = await response.text();
+                
+                showResult(`Conexão bem-sucedida!\n${status}\nResposta: ${data}`);
+            } catch (error) {
+                showResult(`Erro na conexão: ${error.message}\n\nDetalhes: ${JSON.stringify(error)}`, true);
+            }
+        }
+
+        // Função para testar o login
+        async function testLogin() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            showResult(`Testando login com ${username} em ${apiUrl}/auth/login...`);
+            
+            try {
+                const response = await fetch(`${apiUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const status = `Status: ${response.status} ${response.statusText}`;
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    showResult(`Falha no login!\n${status}\nErro: ${errorText}`, true);
+                    return;
+                }
+                
+                const data = await response.json();
+                showResult(`Login bem-sucedido!\n${status}\nResposta: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                showResult(`Erro no login: ${error.message}\n\nDetalhes: ${JSON.stringify(error)}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -5,11 +5,7 @@
 
 // Determina a URL base da API com base no ambiente
 const getApiBaseUrl = () => {
-  // Em produção, usar a URL completa do backend
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_BASE || '/api';
-  }
-  // Em desenvolvimento, usar o proxy local para evitar problemas de CORS
+  // Sempre usar o caminho relativo /api, já que frontend e backend estão no mesmo servidor
   return '/api';
 };
 
@@ -35,7 +31,7 @@ const apiRequest = async (endpoint, options = {}) => {
       'Pragma': 'no-cache',
       'Expires': '0'
     },
-    credentials: 'include',
+    credentials: 'same-origin', // Mudado para same-origin já que estamos no mesmo servidor
     mode: 'cors'
   };
   

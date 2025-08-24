@@ -47,10 +47,31 @@ export function AuthProvider({ children }) {
     try {
       setApiError(null) // Limpa erros anteriores
       
-      const data = await apiRequest('auth/login', {
+      console.log('Enviando requisição para:', `${API_BASE}/auth/login`)
+      
+      // Usar fetch diretamente para ter mais controle sobre o processo
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        credentials: 'same-origin', // Importante para cookies de sessão no mesmo servidor
         body: JSON.stringify({ username, password })
       })
+      
+      console.log('Status da resposta:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Resposta de erro:', errorText)
+        throw new Error(errorText || `Erro ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      console.log('Dados recebidos:', JSON.stringify(data))
       
       localStorage.setItem('token', data.token)
       setToken(data.token)
@@ -58,7 +79,7 @@ export function AuthProvider({ children }) {
       return { success: true }
     } catch (error) {
       console.error('Erro durante login:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: error.message || 'Falha na conexão com o servidor' }
     }
   }
 
