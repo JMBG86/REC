@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://rec-ub72.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://rec2.onrender.com/api/:path*" },
     { "source": "/:path*", "destination": "/index.html" }
   ]
 }
