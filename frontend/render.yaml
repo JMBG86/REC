@@ -10,7 +10,7 @@ services:
     headers:
       - path: /api/(.*)
         name: Access-Control-Allow-Origin
-        value: "https://rec-ub72.onrender.com"
+        value: "https://rec-frontend-uha5.onrender.com"
       - path: /api/(.*)
         name: Access-Control-Allow-Methods
         value: "GET,OPTIONS,PATCH,DELETE,POST,PUT"
