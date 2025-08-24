@@ -55,28 +55,63 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     try {
       console.log('Tentando login em:', `${API_BASE}/auth/login`)
+      console.log('Versão da API:', import.meta.env.VITE_API_BASE)
+      console.log('Ambiente:', import.meta.env.MODE)
+      
+      // Log detalhado da requisição
+      const requestBody = JSON.stringify({ username, password: '***' })
+      console.log('Corpo da requisição:', requestBody)
+      console.log('Headers da requisição:', {
+        'Content-Type': 'application/json'
+      })
+      
+      // Fazer a requisição com logs detalhados
+      console.log('Iniciando fetch para:', `${API_BASE}/auth/login`)
+      const startTime = performance.now()
+      
       const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password }),
+        credentials: 'include' // Tentar incluir cookies se necessário
       })
-
-      console.log('Resposta do login:', response.status)
+      
+      const endTime = performance.now()
+      console.log(`Requisição completada em ${endTime - startTime}ms`)
+      console.log('Resposta do login - Status:', response.status)
+      console.log('Resposta do login - Status Text:', response.statusText)
+      console.log('Resposta do login - Headers:', [...response.headers.entries()])
+      console.log('Resposta do login - Type:', response.type)
+      console.log('Resposta do login - URL:', response.url)
       
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Erro no login')
+        console.error('Resposta não-OK recebida:', response.status, response.statusText)
+        let errorData = {}
+        try {
+          errorData = await response.json()
+          console.error('Detalhes do erro:', errorData)
+        } catch (parseError) {
+          console.error('Erro ao analisar resposta de erro:', parseError)
+          const responseText = await response.text()
+          console.error('Texto da resposta de erro:', responseText)
+          errorData = { message: 'Erro no formato da resposta' }
+        }
+        throw new Error(errorData.message || `Erro no login: ${response.status}`)
       }
 
+      console.log('Analisando resposta JSON...')
       const data = await response.json()
+      console.log('Dados recebidos:', { ...data, token: data.token ? '***' : null })
+      
       localStorage.setItem('token', data.token)
       setToken(data.token)
       setUser(data.user)
       return { success: true }
     } catch (error) {
       console.error('Erro durante login:', error)
+      console.error('Stack trace:', error.stack)
       return { success: false, error: error.message }
     }
   }
