@@ -23,8 +23,8 @@ services:
       - key: NODE_VERSION
         value: "20.11.0"
       - key: VITE_API_URL
-        value: "https://rec-ub72.onrender.com/api"
+        value: "https://rec-backend-ub72.onrender.com/api"
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://rec-ub72.onrender.com/api/:splat
+        destination: https://rec-backend-ub72.onrender.com/api/:splat
