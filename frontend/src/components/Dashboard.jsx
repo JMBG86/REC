@@ -70,7 +70,7 @@ export default function PainelDeControlo() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Painel de Controlo</h1>
-        <p className="text-muted-foreground">Visão geral do sistema de recuperação de veículos</p>
+        <p className="text-muted-foreground">Visão geral do Painel de Controlo do sistema de recuperação de veículos</p>
       </div>
 
       {/* Cards de estatísticas principais */}
