@@ -3,7 +3,7 @@ import sys
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
 from dotenv import load_dotenv
@@ -36,6 +36,11 @@ app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(document_bp, url_prefix='/api')
 app.register_blueprint(email_trigger_bp, url_prefix='/api')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
+
+@app.route('/api/health')
+def health_check():
+    return jsonify({'status': 'ok', 'message': 'API is running'})
+
 
 # Configuração da base de dados
 # Usar o DATABASE_URL do .env se disponível, caso contrário usar SQLite como fallback
