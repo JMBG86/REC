@@ -6,6 +6,12 @@ import sys
 # Adicionar o diretório raiz ao path para importar os módulos corretamente
 root_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_path)
+sys.path.insert(0, os.path.join(root_path, 'src'))
+
+# Imprimir o sys.path para debug
+print("Python sys.path:")
+for p in sys.path:
+    print(f"  - {p}")
 
 # Número de workers - recomendado (2 x núcleos) + 1
 workers = int(os.getenv('WEB_CONCURRENCY', 4))

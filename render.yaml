@@ -3,7 +3,7 @@ services:
     name: rec-backend
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: PYTHONPATH=$PYTHONPATH:/opt/render/project/src gunicorn -c gunicorn_config.py wsgi:app
+    startCommand: PYTHONPATH=$PYTHONPATH:/opt/render/project gunicorn -c gunicorn_config.py 'src.main:app'
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.0"

@@ -19,6 +19,7 @@ from src.routes.admin import admin_bp
 from src.models.vehicle import Vehicle, VehicleUpdate, Document
 from src.models.rent_a_car import RentACar, EmailTrigger
 from src.models.car_model.car_model import CarBrand, CarModel
+# Usar importação absoluta para garantir que o módulo seja encontrado
 from src.models.store_location import StoreLocation
 
 # Carregar variáveis de ambiente

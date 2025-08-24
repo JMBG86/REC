@@ -3,6 +3,7 @@ from src.models.user import db
 from src.models.vehicle import Vehicle, VehicleUpdate, Document
 # Importar diretamente do módulo específico
 from src.models.car_model.car_model import CarBrand, CarModel
+# Usar importação absoluta para evitar problemas no Render
 from src.models.store_location import StoreLocation
 from src.routes.auth import token_required
 from datetime import datetime

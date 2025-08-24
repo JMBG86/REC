@@ -1,3 +1,4 @@
+# Usar importação absoluta para garantir que o módulo seja encontrado
 from src.models.user import db
 from datetime import datetime
 

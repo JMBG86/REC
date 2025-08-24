@@ -3,6 +3,7 @@ from src.models.user import User, db
 # Importar diretamente do módulo específico
 from src.models.car_model.car_model import CarBrand, CarModel
 from src.models.rent_a_car import RentACar
+# Usar importação absoluta para evitar problemas no Render
 from src.models.store_location import StoreLocation
 from src.routes.auth import token_required, admin_required
 from datetime import datetime
