@@ -5,6 +5,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory
 from flask_cors import CORS
+from flask_migrate import Migrate
+from dotenv import load_dotenv
 from src.models.user import db
 from src.routes.user import user_bp
 from src.routes.vehicle import vehicle_bp
@@ -16,8 +18,11 @@ from src.routes.email_trigger import email_trigger_bp
 from src.models.vehicle import Vehicle, VehicleUpdate, Document
 from src.models.rent_a_car import RentACar, EmailTrigger
 
+# Carregar variáveis de ambiente
+load_dotenv()
+
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
-app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 
 # Configurar CORS para permitir requests do frontend
 CORS(app, origins="*")
@@ -29,13 +34,24 @@ app.register_blueprint(document_bp, url_prefix='/api')
 app.register_blueprint(email_trigger_bp, url_prefix='/api')
 
 # Configuração da base de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+# Usar o DATABASE_URL do .env se disponível, caso contrário usar SQLite como fallback
+database_url = os.getenv('DATABASE_URL')
+if database_url is None:
+    # Fallback para SQLite se DATABASE_URL não estiver definido
+    database_url = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
+    print("AVISO: Usando SQLite como fallback. Configure DATABASE_URL para usar Neon.tech.")
 
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB max file size por padrão
+
+# Inicializar o banco de dados e o sistema de migração
 db.init_app(app)
-with app.app_context():
-    db.create_all()
+migrate = Migrate(app, db)
+
+# Não criar tabelas automaticamente, usar migrações em vez disso
+# with app.app_context():
+#     db.create_all()
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')

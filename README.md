@@ -25,7 +25,8 @@ Sistema web completo para gestão de veículos desaparecidos de empresas de rent
 - **Flask** - Framework web Python
 - **SQLAlchemy** - ORM para base de dados
 - **JWT** - Autenticação segura
-- **SQLite** - Base de dados (facilmente migrável)
+- **PostgreSQL (Neon.tech)** - Base de dados serverless na nuvem
+- **Flask-Migrate** - Sistema de migração de banco de dados
 - **Flask-CORS** - Suporte para requisições cross-origin
 
 ### Frontend
@@ -63,8 +64,14 @@ Sistema web completo para gestão de veículos desaparecidos de empresas de rent
 ### Backend
 ```bash
 cd vehicle-recovery-system
-source venv/bin/activate
+source venv/bin/activate  # No Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
+
+# Configurar banco de dados Neon.tech (PostgreSQL)
+# Veja instruções detalhadas em NEON_SETUP_GUIDE.md
+python migrate_to_neon.py
+
+# Iniciar a aplicação
 python src/main.py
 ```
 
@@ -90,6 +97,18 @@ A aplicação está configurada para deployment automático e está disponível 
 **Credenciais de teste:**
 - Username: admin
 - Password: admin123
+
+## 🗄️ Banco de Dados
+
+O sistema utiliza o **Neon.tech**, um serviço de PostgreSQL serverless na nuvem, oferecendo:
+
+- **Alta disponibilidade** - Infraestrutura gerenciada e resiliente
+- **Escalabilidade** - Escala automaticamente conforme a demanda
+- **Branching** - Crie cópias isoladas do banco de dados para desenvolvimento e testes
+- **Escala a Zero** - Economize recursos quando o banco de dados não está em uso
+- **Compatibilidade PostgreSQL** - Aproveite todos os recursos do PostgreSQL
+
+Para configurar o Neon.tech para este projeto, consulte o guia detalhado em [NEON_SETUP_GUIDE.md](NEON_SETUP_GUIDE.md).
 
 ## 📁 Estrutura do Projeto
 
