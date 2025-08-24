@@ -1,3 +1,3 @@
 # Este arquivo permite que o Python reconheça este diretório como um pacote
 # Usar importação absoluta para garantir que o módulo seja encontrado
-from src.models.car_model.car_model import CarBrand, CarModel
+from .car_model import CarBrand, CarModel

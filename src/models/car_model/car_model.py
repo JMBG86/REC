@@ -1,5 +1,5 @@
 # Usar importação absoluta para garantir que o módulo seja encontrado
-from src.models.user import db
+from ..user import db
 from datetime import datetime
 
 class CarBrand(db.Model):
