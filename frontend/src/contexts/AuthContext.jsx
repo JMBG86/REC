@@ -84,6 +84,9 @@ export function AuthProvider({ children }) {
         throw new Error(errorMessage)
       }
       
+      // Clonar a resposta para poder ler o corpo mais de uma vez se necessário
+      const responseClone = response.clone()
+      
       // Tentar obter o JSON diretamente
       try {
         const data = await response.json()
@@ -100,9 +103,13 @@ export function AuthProvider({ children }) {
       } catch (jsonError) {
         console.error('Erro ao processar JSON:', jsonError)
         
-        // Tentar ler como texto se o JSON falhar
-        const responseText = await response.text()
-        console.log('Texto da resposta:', responseText)
+        // Tentar ler como texto usando o clone da resposta
+        try {
+          const responseText = await responseClone.text()
+          console.log('Texto da resposta:', responseText)
+        } catch (textError) {
+          console.error('Não foi possível ler o texto da resposta:', textError)
+        }
         
         throw new Error(`Erro ao processar resposta do servidor: ${jsonError.message}`)
       }
