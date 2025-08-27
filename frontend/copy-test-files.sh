@@ -46,6 +46,11 @@ if [ -f "public/test-local.html" ]; then
     cp -f "public/test-local.html" "dist/test-local.html" 2>/dev/null || :
 fi
 
+if [ -f "public/cors-diagnostic.html" ]; then
+    echo "Copiando cors-diagnostic.html..."
+    cp -f "public/cors-diagnostic.html" "dist/cors-diagnostic.html" 2>/dev/null || :
+fi
+
 if [ -f "public/test-login-local.html" ]; then
     echo "Copiando test-login-local.html..."
     cp -f "public/test-login-local.html" "dist/test-login-local.html" 2>/dev/null || :
