@@ -31,7 +31,7 @@ Este é o frontend do Sistema de Recuperação de Veículos, uma aplicação web
 Crie um arquivo `.env.production` com as seguintes variáveis:
 
 ```
-VITE_API_BASE=https://rec-backend.onrender.com/api
+VITE_API_BASE=/api
 ```
 
 ### Deploy no Render.com
@@ -43,12 +43,37 @@ O projeto está configurado para ser implantado no Render.com. Siga os passos ab
 3. Crie um novo Web Service e selecione o repositório
 4. Configure as seguintes opções:
    - **Nome**: rec-frontend
-   - **Ambiente**: Node
-   - **Build Command**: `cd frontend && npm install && npm run build`
-   - **Start Command**: `cd frontend && npm run preview -- --host 0.0.0.0 --port $PORT`
+   - **Ambiente**: Static Site
+   - **Build Command**: `npm install --legacy-peer-deps && npm run build`
+   - **Publish Directory**: `./dist`
    - **Variáveis de Ambiente**:
-     - `NODE_VERSION`: 20.11.0
-     - `VITE_API_BASE`: https://rec-backend.onrender.com/api
+       - `NODE_VERSION`: 20.11.0
+       - `VITE_API_BASE`: /api
+ 
+ ### Scripts de Deploy
+
+O projeto inclui scripts para facilitar o processo de deploy:
+
+- **Windows**: Execute `deploy-render-frontend.ps1`
+- **Linux/Mac**: Execute `deploy-render-frontend.sh`
+
+Estes scripts garantem que todos os arquivos necessários sejam incluídos no build e fazem o commit e push das alterações para o GitHub, que por sua vez aciona o deploy automático no Render.com.
+
+### Arquivos de Teste e Diagnóstico
+
+O projeto inclui vários arquivos HTML para testar e diagnosticar problemas de conexão com a API:
+
+- **test-api-direct.html**: Teste de conexão direta com a API, incluindo testes de login e verificação de saúde (health check)
+- **cors-test.html**: Teste específico para problemas de CORS
+- **login-teste.html**: Teste simplificado do processo de login
+
+Para acessar estes arquivos no ambiente de produção, use as seguintes URLs:
+
+- `https://rec-frontend-uha5.onrender.com/test-api-direct.html`
+- `https://rec-frontend-uha5.onrender.com/cors-test.html`
+- `https://rec-frontend-uha5.onrender.com/login-teste.html`
+
+> **Nota**: Para que estes arquivos estejam disponíveis no ambiente de produção, eles devem estar no diretório `public/` antes do build. Os scripts de deploy mencionados acima garantem isso automaticamente.
 
 5. Clique em "Create Web Service"
 
