@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de URL da API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de URL da API</h1>
+    <p>Esta página testa a configuração da URL da API no frontend.</p>
+    
+    <div>
+        <button id="testApiUrl">Testar URL da API</button>
+        <button id="testHealthEndpoint">Testar Endpoint de Saúde</button>
+        <button id="testLoginEndpoint">Testar Endpoint de Login</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Função para mostrar resultados
+        function showResult(title, data, isError = false) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            
+            let content = `<h3>${title}</h3>`;
+            
+            if (typeof data === 'object') {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } else {
+                content += `<p>${data}</p>`;
+            }
+            
+            resultDiv.innerHTML = content;
+            document.getElementById('results').prepend(resultDiv);
+        }
+        
+        // Teste da URL da API
+        document.getElementById('testApiUrl').addEventListener('click', () => {
+            try {
+                // Verificar se a variável de ambiente está disponível
+                const apiUrl = import.meta.env?.VITE_API_BASE || 'Não definido';
+                showResult('URL da API', apiUrl);
+            } catch (error) {
+                showResult('Erro ao obter URL da API', error.message, true);
+            }
+        });
+        
+        // Teste do endpoint de saúde
+        document.getElementById('testHealthEndpoint').addEventListener('click', async () => {
+            try {
+                // Tentar obter a URL da API do ambiente
+                let apiUrl;
+                try {
+                    apiUrl = import.meta.env?.VITE_API_BASE || '/api';
+                } catch (e) {
+                    apiUrl = 'https://rec-ub72.onrender.com/api';
+                }
+                
+                showResult('Tentando acessar', `${apiUrl}/health`);
+                
+                const response = await fetch(`${apiUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const data = await response.json();
+                
+                // Coletar headers para exibição
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                showResult('Resposta do Endpoint de Saúde', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data,
+                    headers
+                });
+            } catch (error) {
+                showResult('Erro ao testar endpoint de saúde', error.message, true);
+            }
+        });
+        
+        // Teste do endpoint de login
+        document.getElementById('testLoginEndpoint').addEventListener('click', async () => {
+            try {
+                // Tentar obter a URL da API do ambiente
+                let apiUrl;
+                try {
+                    apiUrl = import.meta.env?.VITE_API_BASE || '/api';
+                } catch (e) {
+                    apiUrl = 'https://rec-ub72.onrender.com/api';
+                }
+                
+                showResult('Tentando acessar', `${apiUrl}/auth/login (OPTIONS)`);
+                
+                const response = await fetch(`${apiUrl}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                // Coletar headers para exibição
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                showResult('Resposta do Endpoint de Login (OPTIONS)', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers
+                });
+            } catch (error) {
+                showResult('Erro ao testar endpoint de login', error.message, true);
+            }
+        });
+    </script>
+</body>
+</html>

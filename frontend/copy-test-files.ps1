@@ -18,6 +18,12 @@ if (Test-Path "public\test-api-direct.html") {
     Copy-Item -Path "public\test-api-direct.html" -Destination "dist\test-api-direct.html" -Force
 }
 
+# Copiar o novo arquivo de teste de URL da API
+if (Test-Path "public\test-api-url.html") {
+    Write-Host "Copiando test-api-url.html..." -ForegroundColor Cyan
+    Copy-Item -Path "public\test-api-url.html" -Destination "dist\test-api-url.html" -Force
+}
+
 if (Test-Path "public\cors-test.html") {
     Write-Host "Copiando cors-test.html..." -ForegroundColor Cyan
     Copy-Item -Path "public\cors-test.html" -Destination "dist\cors-test.html" -Force

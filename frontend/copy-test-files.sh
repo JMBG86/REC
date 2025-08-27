@@ -20,6 +20,12 @@ if [ -f "public/test-api-direct.html" ]; then
     cp -f "public/test-api-direct.html" "dist/test-api-direct.html" 2>/dev/null || :
 fi
 
+# Copiar o novo arquivo de teste de URL da API
+if [ -f "public/test-api-url.html" ]; then
+    echo "Copiando test-api-url.html..."
+    cp -f "public/test-api-url.html" "dist/test-api-url.html" 2>/dev/null || :
+fi
+
 if [ -f "public/cors-test.html" ]; then
     echo "Copiando cors-test.html..."
     cp -f "public/cors-test.html" "dist/cors-test.html" 2>/dev/null || :
