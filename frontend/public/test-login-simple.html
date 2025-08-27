@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Login Simples</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Login Simples</h1>
+    <p>Esta página testa o login diretamente no backend.</p>
+    
+    <div>
+        <label for="username">Usuário:</label>
+        <input type="text" id="username" value="admin" />
+        
+        <label for="password">Senha:</label>
+        <input type="password" id="password" value="admin" />
+        
+        <button id="testDirectLogin">Testar Login Direto</button>
+        <button id="testHealthEndpoint">Testar Endpoint de Saúde</button>
+        <button id="testOptionsRequest">Testar OPTIONS Request</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Função para mostrar resultados
+        function showResult(title, data, isError = false) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            
+            let content = `<h3>${title}</h3>`;
+            
+            if (typeof data === 'object') {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } else {
+                content += `<p>${data}</p>`;
+            }
+            
+            resultDiv.innerHTML = content;
+            document.getElementById('results').prepend(resultDiv);
+        }
+        
+        // URL fixa do backend
+        const API_URL = 'https://rec-ub72.onrender.com/api';
+        
+        // Teste do endpoint de saúde
+        document.getElementById('testHealthEndpoint').addEventListener('click', async () => {
+            try {
+                showResult('Tentando acessar', `${API_URL}/health`);
+                
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                // Coletar headers para exibição
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                try {
+                    const data = await response.json();
+                    showResult('Resposta do Endpoint de Saúde', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data,
+                        headers
+                    });
+                } catch (e) {
+                    const text = await response.text();
+                    showResult('Resposta do Endpoint de Saúde (texto)', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        text,
+                        headers
+                    });
+                }
+            } catch (error) {
+                showResult('Erro ao testar endpoint de saúde', error.message, true);
+            }
+        });
+        
+        // Teste de OPTIONS request
+        document.getElementById('testOptionsRequest').addEventListener('click', async () => {
+            try {
+                showResult('Tentando acessar', `${API_URL}/auth/login (OPTIONS)`);
+                
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                // Coletar headers para exibição
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                showResult('Resposta do Endpoint de Login (OPTIONS)', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers
+                });
+            } catch (error) {
+                showResult('Erro ao testar OPTIONS request', error.message, true);
+            }
+        });
+        
+        // Teste de login direto
+        document.getElementById('testDirectLogin').addEventListener('click', async () => {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                showResult('Tentando login com', { username, password: '********' });
+                
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include',
+                    mode: 'cors',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                // Coletar headers para exibição
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                try {
+                    const data = await response.json();
+                    showResult('Resposta do Login', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data,
+                        headers
+                    });
+                } catch (e) {
+                    const text = await response.text();
+                    showResult('Resposta do Login (texto)', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        text,
+                        headers
+                    }, !response.ok);
+                }
+            } catch (error) {
+                showResult('Erro ao testar login', error.message, true);
+            }
+        });
+    </script>
+</body>
+</html>

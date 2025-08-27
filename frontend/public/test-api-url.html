@@ -77,8 +77,8 @@
         // Teste da URL da API
         document.getElementById('testApiUrl').addEventListener('click', () => {
             try {
-                // Verificar se a variável de ambiente está disponível
-                const apiUrl = import.meta.env?.VITE_API_BASE || 'Não definido';
+                // Usar URL fixa do backend, já que import.meta.env não está disponível em HTML estático
+                const apiUrl = 'https://rec-ub72.onrender.com/api';
                 showResult('URL da API', apiUrl);
             } catch (error) {
                 showResult('Erro ao obter URL da API', error.message, true);
@@ -88,13 +88,8 @@
         // Teste do endpoint de saúde
         document.getElementById('testHealthEndpoint').addEventListener('click', async () => {
             try {
-                // Tentar obter a URL da API do ambiente
-                let apiUrl;
-                try {
-                    apiUrl = import.meta.env?.VITE_API_BASE || '/api';
-                } catch (e) {
-                    apiUrl = 'https://rec-ub72.onrender.com/api';
-                }
+                // Usar URL fixa do backend
+                const apiUrl = 'https://rec-ub72.onrender.com/api';
                 
                 showResult('Tentando acessar', `${apiUrl}/health`);
                 
@@ -130,13 +125,8 @@
         // Teste do endpoint de login
         document.getElementById('testLoginEndpoint').addEventListener('click', async () => {
             try {
-                // Tentar obter a URL da API do ambiente
-                let apiUrl;
-                try {
-                    apiUrl = import.meta.env?.VITE_API_BASE || '/api';
-                } catch (e) {
-                    apiUrl = 'https://rec-ub72.onrender.com/api';
-                }
+                // Usar URL fixa do backend
+                const apiUrl = 'https://rec-ub72.onrender.com/api';
                 
                 showResult('Tentando acessar', `${apiUrl}/auth/login (OPTIONS)`);
                 

@@ -26,6 +26,11 @@ if [ -f "public/test-api-url.html" ]; then
     cp -f "public/test-api-url.html" "dist/test-api-url.html" 2>/dev/null || :
 fi
 
+if [ -f "public/test-login-simple.html" ]; then
+    echo "Copiando test-login-simple.html..."
+    cp -f "public/test-login-simple.html" "dist/test-login-simple.html" 2>/dev/null || :
+fi
+
 if [ -f "public/cors-test.html" ]; then
     echo "Copiando cors-test.html..."
     cp -f "public/cors-test.html" "dist/cors-test.html" 2>/dev/null || :
