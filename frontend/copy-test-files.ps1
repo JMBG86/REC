@@ -33,6 +33,11 @@ if (Test-Path "public\cors-diagnostic.html") {
     Copy-Item -Path "public\cors-diagnostic.html" -Destination "dist\cors-diagnostic.html" -Force
 }
 
+if (Test-Path "public\cors-test-new.html") {
+    Write-Host "Copiando cors-test-new.html..." -ForegroundColor Cyan
+    Copy-Item -Path "public\cors-test-new.html" -Destination "dist\cors-test-new.html" -Force
+}
+
 if (Test-Path "public\cors-test.html") {
     Write-Host "Copiando cors-test.html..." -ForegroundColor Cyan
     Copy-Item -Path "public\cors-test.html" -Destination "dist\cors-test.html" -Force
