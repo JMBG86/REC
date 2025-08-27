@@ -5,8 +5,8 @@
 
 // Determina a URL base da API com base no ambiente
 const getApiBaseUrl = () => {
-  // Sempre usar o caminho relativo /api, já que frontend e backend estão no mesmo servidor
-  return '/api';
+  // Usar a variável de ambiente VITE_API_BASE definida no arquivo .env.production
+  return import.meta.env.VITE_API_BASE || '/api';
 };
 
 // URL base da API
@@ -31,7 +31,7 @@ const apiRequest = async (endpoint, options = {}) => {
       'Pragma': 'no-cache',
       'Expires': '0'
     },
-    credentials: 'same-origin', // Mudado para same-origin já que estamos no mesmo servidor
+    credentials: 'include', // Alterado para include para suportar CORS entre domínios diferentes
     mode: 'cors'
   };
   
