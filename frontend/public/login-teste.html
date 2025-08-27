@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Login - Diagnóstico Render.com</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Diagnóstico de Erro de Login no Render.com</h1>
+    
+    <div class="container">
+        <h2>1. Teste de Conexão com a API</h2>
+        <p>Verifica se a API está acessível</p>
+        <div>
+            <label for="apiUrl">URL da API:</label>
+            <input type="text" id="apiUrl" value="/api" />
+        </div>
+        <button onclick="testConnection()">Testar Conexão</button>
+        <div id="connectionResult" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>2. Teste de Login</h2>
+        <p>Tenta fazer login e captura o resultado completo</p>
+        <div>
+            <label for="username">Usuário:</label>
+            <input type="text" id="username" value="admin" />
+        </div>
+        <div>
+            <label for="password">Senha:</label>
+            <input type="password" id="password" value="admin" />
+        </div>
+        <button onclick="testLogin()">Testar Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>3. Informações do Ambiente</h2>
+        <div id="environmentInfo" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>4. Teste de Requisição Fetch Detalhada</h2>
+        <p>Mostra todos os detalhes da requisição e resposta</p>
+        <button onclick="testDetailedFetch()">Testar Fetch Detalhado</button>
+        <div id="detailedResult" class="result"></div>
+    </div>
+
+    <script>
+        // Exibir informações do ambiente
+        document.addEventListener('DOMContentLoaded', function() {
+            const envInfo = document.getElementById('environmentInfo');
+            envInfo.innerHTML = `
+                <strong>URL:</strong> ${window.location.href}<br>
+                <strong>Origem:</strong> ${window.location.origin}<br>
+                <strong>Pathname:</strong> ${window.location.pathname}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent}<br>
+            `;
+        });
+
+        // Função para testar a conexão com a API
+        async function testConnection() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const resultElement = document.getElementById('connectionResult');
+            resultElement.innerHTML = 'Testando conexão...';
+            
+            try {
+                const startTime = performance.now();
+                const response = await fetch(`${apiUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                const responseText = await response.text();
+                const statusClass = response.ok ? 'success' : 'error';
+                
+                resultElement.innerHTML = `
+                    <div class="${statusClass}">
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de resposta:</strong> ${responseTime}ms<br>
+                        <strong>Headers:</strong><br>
+                    </div>
+                    <div>
+                        ${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('<br>')}
+                    </div>
+                    <strong>Resposta:</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                `;
+            } catch (error) {
+                resultElement.innerHTML = `
+                    <div class="error">
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Função para testar o login
+        async function testLogin() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultElement = document.getElementById('loginResult');
+            
+            resultElement.innerHTML = 'Testando login...';
+            
+            try {
+                const startTime = performance.now();
+                const response = await fetch(`${apiUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                // Capturar o corpo da resposta como texto primeiro
+                const responseText = await response.text();
+                
+                // Tentar analisar como JSON se possível
+                let responseData;
+                let isJson = false;
+                try {
+                    if (responseText.trim()) {
+                        responseData = JSON.parse(responseText);
+                        isJson = true;
+                    }
+                } catch (e) {
+                    responseData = { error: `Não foi possível analisar como JSON: ${e.message}` };
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                
+                resultElement.innerHTML = `
+                    <div class="${statusClass}">
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de resposta:</strong> ${responseTime}ms<br>
+                        <strong>Headers:</strong><br>
+                    </div>
+                    <div>
+                        ${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('<br>')}
+                    </div>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                resultElement.innerHTML = `
+                    <div class="error">
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Função para testar fetch com detalhes completos
+        async function testDetailedFetch() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultElement = document.getElementById('detailedResult');
+            
+            resultElement.innerHTML = 'Executando teste detalhado...';
+            
+            const log = [];
+            try {
+                // Registrar informações da requisição
+                const requestBody = JSON.stringify({ username, password });
+                log.push(`Requisição para: ${apiUrl}/auth/login`);
+                log.push(`Método: POST`);
+                log.push(`Headers: ${JSON.stringify({
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                }, null, 2)}`);
+                log.push(`Body: ${requestBody}`);
+                
+                // Fazer a requisição
+                const startTime = performance.now();
+                const response = await fetch(`${apiUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: requestBody,
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                // Registrar informações da resposta
+                log.push(`\nResposta recebida em ${responseTime}ms`);
+                log.push(`Status: ${response.status} ${response.statusText}`);
+                log.push(`Headers:`);
+                Array.from(response.headers).forEach(([key, value]) => {
+                    log.push(`  ${key}: ${value}`);
+                });
+                
+                // Obter o corpo da resposta como texto
+                const responseText = await response.text();
+                log.push(`\nCorpo da resposta (texto):`);
+                log.push(responseText);
+                
+                // Tentar analisar como JSON
+                if (responseText.trim()) {
+                    try {
+                        const responseJson = JSON.parse(responseText);
+                        log.push(`\nCorpo da resposta (JSON):`);
+                        log.push(JSON.stringify(responseJson, null, 2));
+                    } catch (e) {
+                        log.push(`\nNão foi possível analisar como JSON: ${e.message}`);
+                    }
+                } else {
+                    log.push(`\nResposta vazia`);
+                }
+                
+                // Exibir o log completo
+                resultElement.innerHTML = `<pre>${escapeHtml(log.join('\n'))}</pre>`;
+            } catch (error) {
+                log.push(`\nErro na requisição: ${error.message}`);
+                log.push(error.stack);
+                resultElement.innerHTML = `<pre class="error">${escapeHtml(log.join('\n'))}</pre>`;
+            }
+        }
+
+        // Função para escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

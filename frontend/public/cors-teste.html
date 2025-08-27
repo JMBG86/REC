@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de CORS - Render.com</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de CORS no Render.com</h1>
+    
+    <div class="container">
+        <h2>Informações do Ambiente</h2>
+        <div id="environmentInfo" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>Teste de Preflight OPTIONS</h2>
+        <p>Verifica se o servidor responde corretamente a requisições OPTIONS (CORS preflight)</p>
+        <button onclick="testOptions()">Testar OPTIONS</button>
+        <div id="optionsResult" class="result">Os resultados aparecerão aqui...</div>
+    </div>
+    
+    <div class="container">
+        <h2>Teste de Login com XMLHttpRequest</h2>
+        <p>Tenta fazer login usando XMLHttpRequest em vez de fetch</p>
+        <button onclick="testLoginXHR()">Testar Login (XHR)</button>
+        <div id="loginXHRResult" class="result">Os resultados aparecerão aqui...</div>
+    </div>
+
+    <div class="container">
+        <h2>Teste de Login com Fetch</h2>
+        <p>Tenta fazer login usando fetch com diferentes configurações de CORS</p>
+        <button onclick="testLoginFetch()">Testar Login (Fetch)</button>
+        <div id="loginFetchResult" class="result">Os resultados aparecerão aqui...</div>
+    </div>
+
+    <script>
+        // Função para escapar HTML e prevenir XSS
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        // Exibir informações do ambiente
+        document.addEventListener('DOMContentLoaded', function() {
+            const envInfo = document.getElementById('environmentInfo');
+            envInfo.innerHTML = `
+                <strong>URL:</strong> ${window.location.href}<br>
+                <strong>Origem:</strong> ${window.location.origin}<br>
+                <strong>Pathname:</strong> ${window.location.pathname}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                <strong>Data e Hora:</strong> ${new Date().toLocaleString()}<br>
+            `;
+        });
+        
+        // Função para testar requisição OPTIONS (preflight CORS)
+        async function testOptions() {
+            const resultElement = document.getElementById('optionsResult');
+            resultElement.innerHTML = 'Testando requisição OPTIONS...';
+            resultElement.className = 'result';
+            
+            try {
+                // Criar uma requisição XHR para ter mais controle
+                const xhr = new XMLHttpRequest();
+                xhr.open('OPTIONS', '/api/auth/login', true);
+                xhr.setRequestHeader('Access-Control-Request-Method', 'POST');
+                xhr.setRequestHeader('Access-Control-Request-Headers', 'Content-Type');
+                
+                // Registrar os headers da resposta
+                const headers = {};
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        const statusClass = (xhr.status >= 200 && xhr.status < 300) ? 'success' : 'error';
+                        resultElement.className = `result ${statusClass}`;
+                        
+                        // Obter todos os headers
+                        const allHeaders = xhr.getAllResponseHeaders();
+                        const headerLines = allHeaders.trim().split(/[\r\n]+/);
+                        headerLines.forEach(function (line) {
+                            const parts = line.split(': ');
+                            const header = parts.shift();
+                            const value = parts.join(': ');
+                            headers[header] = value;
+                        });
+                        
+                        resultElement.innerHTML = `
+                            <div>
+                                <strong>Status:</strong> ${xhr.status} ${xhr.statusText}<br>
+                                <strong>URL:</strong> /api/auth/login<br>
+                                <strong>Método:</strong> OPTIONS<br>
+                                <strong>Headers da Requisição:</strong><br>
+                                <pre>Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type</pre>
+                                <strong>Headers da Resposta:</strong><br>
+                                <pre>${escapeHtml(Object.entries(headers).map(([key, value]) => `${key}: ${value}`).join('\n'))}</pre>
+                            </div>
+                            <strong>Resposta:</strong><br>
+                            <pre>${escapeHtml(xhr.responseText || '(resposta vazia)')}</pre>
+                        `;
+                    }
+                };
+                
+                xhr.send();
+            } catch (error) {
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // Função para testar login usando XMLHttpRequest
+        function testLoginXHR() {
+            const resultElement = document.getElementById('loginXHRResult');
+            resultElement.innerHTML = 'Testando login com XMLHttpRequest...';
+            resultElement.className = 'result';
+            
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/auth/login', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.withCredentials = true; // Importante para CORS com credenciais
+                
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        console.log('XHR Status:', xhr.status);
+                        console.log('XHR Response:', xhr.responseText);
+                        
+                        const statusClass = (xhr.status >= 200 && xhr.status < 300) ? 'success' : 'error';
+                        resultElement.className = `result ${statusClass}`;
+                        
+                        // Obter todos os headers
+                        const headers = {};
+                        const allHeaders = xhr.getAllResponseHeaders();
+                        const headerLines = allHeaders.trim().split(/[\r\n]+/);
+                        headerLines.forEach(function (line) {
+                            const parts = line.split(': ');
+                            const header = parts.shift();
+                            const value = parts.join(': ');
+                            headers[header] = value;
+                        });
+                        
+                        // Tentar fazer parse do JSON
+                        let responseData;
+                        let isJson = false;
+                        
+                        if (xhr.responseText && xhr.responseText.trim() !== '') {
+                            try {
+                                responseData = JSON.parse(xhr.responseText);
+                                isJson = true;
+                            } catch (parseError) {
+                                console.error('Erro ao fazer parse do JSON (XHR):', parseError);
+                            }
+                        }
+                        
+                        resultElement.innerHTML = `
+                            <div>
+                                <strong>Status:</strong> ${xhr.status} ${xhr.statusText}<br>
+                                <strong>URL:</strong> /api/auth/login<br>
+                                <strong>Método:</strong> POST<br>
+                                <strong>withCredentials:</strong> true<br>
+                                <strong>Headers da Resposta:</strong><br>
+                                <pre>${escapeHtml(Object.entries(headers).map(([key, value]) => `${key}: ${value}`).join('\n'))}</pre>
+                            </div>
+                            <strong>Corpo da Requisição:</strong><br>
+                            <pre>${escapeHtml(JSON.stringify({ username: 'admin', password: 'admin' }, null, 2))}</pre>
+                            <strong>Resposta (Texto):</strong><br>
+                            <pre>${escapeHtml(xhr.responseText || '(resposta vazia)')}</pre>
+                            ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                        `;
+                    }
+                };
+                
+                xhr.send(JSON.stringify({ username: 'admin', password: 'admin' }));
+            } catch (error) {
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // Função para testar login usando fetch
+        async function testLoginFetch() {
+            const resultElement = document.getElementById('loginFetchResult');
+            resultElement.innerHTML = 'Testando login com fetch...';
+            resultElement.className = 'result';
+            
+            try {
+                const startTime = performance.now();
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest' // Alguns servidores usam isso para detectar AJAX
+                    },
+                    credentials: 'include', // Importante para CORS com credenciais
+                    mode: 'cors', // Explicitamente definir modo CORS
+                    body: JSON.stringify({ username: 'admin', password: 'admin' })
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                console.log('Fetch Status:', response.status, response.statusText);
+                
+                const responseText = await response.text();
+                console.log('Fetch Response:', responseText);
+                
+                let responseData;
+                let isJson = false;
+                
+                if (responseText && responseText.trim() !== '') {
+                    try {
+                        responseData = JSON.parse(responseText);
+                        isJson = true;
+                    } catch (parseError) {
+                        console.error('Erro ao fazer parse do JSON (Fetch):', parseError);
+                    }
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                resultElement.className = `result ${statusClass}`;
+                
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de Resposta:</strong> ${responseTime}ms<br>
+                        <strong>URL:</strong> /api/auth/login<br>
+                        <strong>Método:</strong> POST<br>
+                        <strong>Modo:</strong> cors<br>
+                        <strong>Credenciais:</strong> include<br>
+                        <strong>Headers da Requisição:</strong><br>
+                        <pre>Content-Type: application/json
+X-Requested-With: XMLHttpRequest</pre>
+                        <strong>Headers da Resposta:</strong><br>
+                        <pre>${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('\n')}</pre>
+                    </div>
+                    <strong>Corpo da Requisição:</strong><br>
+                    <pre>${escapeHtml(JSON.stringify({ username: 'admin', password: 'admin' }, null, 2))}</pre>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                console.error('Erro durante login com fetch:', error);
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

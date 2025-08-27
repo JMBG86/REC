@@ -36,6 +36,10 @@ if (-not (Test-Path "public/test-api-direct.html")) {
     }
 }
 
+# Copiar arquivos de teste para a pasta dist
+Write-Host "Copiando arquivos de teste para a pasta dist..." -ForegroundColor Cyan
+.\copy-test-files.ps1
+
 Write-Host "Verificando se o arquivo test-api-direct.html está no diretório dist..." -ForegroundColor Cyan
 if (-not (Test-Path "dist/test-api-direct.html") -and (Test-Path "public/test-api-direct.html")) {
     Write-Host "Copiando test-api-direct.html do diretório public para o diretório dist..." -ForegroundColor Cyan

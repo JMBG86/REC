@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Login Local com API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Login Local com API</h1>
+    
+    <div class="form-group">
+        <label for="username">Nome de usuário:</label>
+        <input type="text" id="username" value="admin" />
+    </div>
+
+    <div class="form-group">
+        <label for="password">Senha:</label>
+        <input type="password" id="password" value="admin" />
+    </div>
+    
+    <div>
+        <button onclick="testLocalLogin()">Testar Login Local</button>
+        <button onclick="testRenderLogin()">Testar Login Render</button>
+        <button onclick="testFrontendLogin()">Testar Login Frontend</button>
+    </div>
+
+    <h2>Resultado:</h2>
+    <div id="result" class="result">Os resultados dos testes aparecerão aqui...</div>
+
+    <script>
+        // Função para mostrar resultados
+        function showResult(message, isError = false) {
+            const resultElement = document.getElementById('result');
+            if (isError) {
+                resultElement.style.color = 'red';
+                resultElement.style.backgroundColor = '#ffeeee';
+            } else {
+                resultElement.style.color = 'black';
+                resultElement.style.backgroundColor = '#f9f9f9';
+            }
+            resultElement.textContent = message;
+        }
+        
+        // Função para testar o login local
+        async function testLocalLogin() {
+            const localUrl = 'http://localhost:5000/api/auth/login';
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            showResult(`Testando login local com ${username} em ${localUrl}...`);
+            
+            try {
+                console.log(`Enviando requisição de login para: ${localUrl}`);
+                console.log(`Dados: ${JSON.stringify({ username, password })}`);
+                
+                const response = await fetch(localUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    credentials: 'include',
+                    mode: 'cors',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('Headers da resposta:', [...response.headers.entries()].map(h => `${h[0]}: ${h[1]}`).join(', '));
+                const status = `Status: ${response.status} ${response.statusText}`;
+                console.log(status);
+                
+                // Clonar a resposta para poder ler o corpo mais de uma vez se necessário
+                const responseClone = response.clone();
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Resposta de erro:', errorText);
+                    showResult(`Falha no login local!\n${status}\nErro: ${errorText}`, true);
+                    return;
+                }
+                
+                try {
+                    // Tentar obter o JSON diretamente
+                    console.log('Tentando obter JSON da resposta...');
+                    const data = await response.json();
+                    console.log('Dados recebidos:', JSON.stringify(data, null, 2));
+                    showResult(`Login local bem-sucedido!\n${status}\nResposta: ${JSON.stringify(data, null, 2)}`);
+                } catch (jsonError) {
+                    console.error('Erro ao processar JSON:', jsonError);
+                    
+                    // Tentar ler como texto usando o clone da resposta
+                    try {
+                        console.log('Tentando ler resposta como texto...');
+                        const responseText = await responseClone.text();
+                        console.log('Texto da resposta:', responseText);
+                        console.log('Tamanho da resposta:', responseText.length);
+                        
+                        if (!responseText || responseText.trim() === '') {
+                            showResult(`Falha no login local!\n${status}\nErro: Resposta vazia do servidor`, true);
+                            return;
+                        }
+                        
+                        showResult(`Login local bem-sucedido, mas com resposta não-JSON!\n${status}\nResposta: ${responseText}`);
+                    } catch (textError) {
+                        console.error('Erro ao ler resposta como texto:', textError);
+                        showResult(`Falha no login local!\n${status}\nErro ao ler resposta: ${textError.message}`, true);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro no login local:', error);
+                showResult(`Erro no login local: ${error.message}\n\nDetalhes: ${JSON.stringify(error)}`, true);
+            }
+        }
+        
+        // Função para testar o login no Render.com diretamente
+        async function testRenderLogin() {
+            const renderUrl = 'https://rec-ub72.onrender.com/api/auth/login';
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            showResult(`Testando login direto no Render com ${username} em ${renderUrl}...`);
+            
+            try {
+                console.log(`Enviando requisição de login para: ${renderUrl}`);
+                console.log(`Dados: ${JSON.stringify({ username, password })}`);
+                
+                const response = await fetch(renderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    credentials: 'include',
+                    mode: 'cors',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('Headers da resposta do Render:', [...response.headers.entries()].map(h => `${h[0]}: ${h[1]}`).join(', '));
+                const status = `Status: ${response.status} ${response.statusText}`;
+                console.log(status);
+                
+                // Clonar a resposta para poder ler o corpo mais de uma vez se necessário
+                const responseClone = response.clone();
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Resposta de erro do Render:', errorText);
+                    showResult(`Falha no login direto no Render!\n${status}\nErro: ${errorText}`, true);
+                    return;
+                }
+                
+                try {
+                    // Tentar obter o JSON diretamente
+                    console.log('Tentando obter JSON da resposta do Render...');
+                    const data = await response.json();
+                    console.log('Dados recebidos do Render:', JSON.stringify(data, null, 2));
+                    showResult(`Login direto no Render bem-sucedido!\n${status}\nResposta: ${JSON.stringify(data, null, 2)}`);
+                } catch (jsonError) {
+                    console.error('Erro ao processar JSON do Render:', jsonError);
+                    
+                    // Tentar ler como texto usando o clone da resposta
+                    try {
+                        console.log('Tentando ler resposta do Render como texto...');
+                        const responseText = await responseClone.text();
+                        console.log('Texto da resposta do Render:', responseText);
+                        console.log('Tamanho da resposta:', responseText.length);
+                        
+                        if (!responseText || responseText.trim() === '') {
+                            showResult(`Falha no login direto no Render!\n${status}\nErro: Resposta vazia do servidor`, true);
+                            return;
+                        }
+                        
+                        showResult(`Login direto no Render bem-sucedido, mas com resposta não-JSON!\n${status}\nResposta: ${responseText}`);
+                    } catch (textError) {
+                        console.error('Erro ao ler resposta do Render como texto:', textError);
+                        showResult(`Falha no login direto no Render!\n${status}\nErro ao ler resposta: ${textError.message}`, true);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro no login direto no Render:', error);
+                showResult(`Erro no login direto no Render: ${error.message}\n\nDetalhes: ${JSON.stringify(error)}`, true);
+            }
+        }
+        
+        // Função para testar o login através do proxy do frontend no Render.com
+        async function testFrontendLogin() {
+            const frontendUrl = 'https://rec-frontend-uha5.onrender.com/api/auth/login';
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            showResult(`Testando login via proxy do frontend com ${username} em ${frontendUrl}...`);
+            
+            try {
+                console.log(`Enviando requisição de login para: ${frontendUrl}`);
+                console.log(`Dados: ${JSON.stringify({ username, password })}`);
+                
+                const response = await fetch(frontendUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    credentials: 'include',
+                    mode: 'cors',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('Headers da resposta do proxy:', [...response.headers.entries()].map(h => `${h[0]}: ${h[1]}`).join(', '));
+                const status = `Status: ${response.status} ${response.statusText}`;
+                console.log(status);
+                
+                // Clonar a resposta para poder ler o corpo mais de uma vez se necessário
+                const responseClone = response.clone();
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Resposta de erro do proxy:', errorText);
+                    showResult(`Falha no login via proxy!\n${status}\nErro: ${errorText}`, true);
+                    return;
+                }
+                
+                try {
+                    // Tentar obter o JSON diretamente
+                    console.log('Tentando obter JSON da resposta do proxy...');
+                    const data = await response.json();
+                    console.log('Dados recebidos do proxy:', JSON.stringify(data, null, 2));
+                    showResult(`Login via proxy bem-sucedido!\n${status}\nResposta: ${JSON.stringify(data, null, 2)}`);
+                } catch (jsonError) {
+                    console.error('Erro ao processar JSON do proxy:', jsonError);
+                    
+                    // Tentar ler como texto usando o clone da resposta
+                    try {
+                        console.log('Tentando ler resposta do proxy como texto...');
+                        const responseText = await responseClone.text();
+                        console.log('Texto da resposta do proxy:', responseText);
+                        console.log('Tamanho da resposta:', responseText.length);
+                        
+                        if (!responseText || responseText.trim() === '') {
+                            showResult(`Falha no login via proxy!\n${status}\nErro: Resposta vazia do servidor`, true);
+                            return;
+                        }
+                        
+                        showResult(`Login via proxy bem-sucedido, mas com resposta não-JSON!\n${status}\nResposta: ${responseText}`);
+                    } catch (textError) {
+                        console.error('Erro ao ler resposta do proxy como texto:', textError);
+                        showResult(`Falha no login via proxy!\n${status}\nErro ao ler resposta: ${textError.message}`, true);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro no login via proxy:', error);
+                showResult(`Erro no login via proxy: ${error.message}\n\nDetalhes: ${JSON.stringify(error)}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

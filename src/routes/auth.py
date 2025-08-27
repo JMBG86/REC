@@ -89,8 +89,7 @@ def login():
         
         # Definir cabeçalhos explícitos para evitar problemas de CORS
         response.headers.add('Content-Type', 'application/json')
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        # Não definimos cabeçalhos CORS aqui, pois serão adicionados pelo middleware global
         
         # Log para debug
         current_app.logger.info(f"Login bem-sucedido para usuário: {user.username}")

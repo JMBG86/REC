@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Rotas - Render.com</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+        input {
+            padding: 8px;
+            width: 100%;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Rotas no Render.com</h1>
+    
+    <div class="container">
+        <h2>Informações do Ambiente</h2>
+        <div id="environmentInfo" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>Teste de Rota Personalizada</h2>
+        <p>Teste qualquer rota da API para verificar se está acessível</p>
+        <input type="text" id="customRoute" value="/api/health" placeholder="Digite a rota (ex: /api/health)">
+        <button onclick="testCustomRoute()">Testar Rota</button>
+        <div id="customRouteResult" class="result">Os resultados aparecerão aqui...</div>
+    </div>
+    
+    <div class="container">
+        <h2>Teste de Rotas Comuns</h2>
+        <p>Testa várias rotas comuns para identificar problemas de configuração</p>
+        <button onclick="testCommonRoutes()">Testar Rotas Comuns</button>
+        <div id="commonRoutesResult" class="result">Os resultados aparecerão aqui...</div>
+    </div>
+
+    <div class="container">
+        <h2>Teste de Login com Diferentes Rotas</h2>
+        <p>Tenta fazer login usando diferentes formatos de URL</p>
+        <button onclick="testLoginRoutes()">Testar Login com Diferentes Rotas</button>
+        <div id="loginRoutesResult" class="result">Os resultados aparecerão aqui...</div>
+    </div>
+
+    <script>
+        // Função para escapar HTML e prevenir XSS
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        // Exibir informações do ambiente
+        document.addEventListener('DOMContentLoaded', function() {
+            const envInfo = document.getElementById('environmentInfo');
+            envInfo.innerHTML = `
+                <strong>URL:</strong> ${window.location.href}<br>
+                <strong>Origem:</strong> ${window.location.origin}<br>
+                <strong>Pathname:</strong> ${window.location.pathname}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                <strong>Data e Hora:</strong> ${new Date().toLocaleString()}<br>
+            `;
+        });
+        
+        // Função para testar uma rota personalizada
+        async function testCustomRoute() {
+            const resultElement = document.getElementById('customRouteResult');
+            const routeInput = document.getElementById('customRoute');
+            const route = routeInput.value.trim();
+            
+            resultElement.innerHTML = `Testando rota: ${route}...`;
+            resultElement.className = 'result';
+            
+            try {
+                const startTime = performance.now();
+                const response = await fetch(route, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include'
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                const responseText = await response.text();
+                let responseData;
+                let isJson = false;
+                
+                try {
+                    responseData = JSON.parse(responseText);
+                    isJson = true;
+                } catch (e) {
+                    // Não é JSON válido
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                resultElement.className = `result ${statusClass}`;
+                
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Rota:</strong> ${route}<br>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de Resposta:</strong> ${responseTime}ms<br>
+                        <strong>Headers:</strong><br>
+                        <pre>${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('\n')}</pre>
+                    </div>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro ao testar rota ${route}:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // Função para testar rotas comuns
+        async function testCommonRoutes() {
+            const resultElement = document.getElementById('commonRoutesResult');
+            resultElement.innerHTML = 'Testando rotas comuns...';
+            resultElement.className = 'result';
+            
+            const routes = [
+                '/api/health',
+                '/api/auth/login',
+                '/auth/login',
+                '/api',
+                '/health'
+            ];
+            
+            let results = [];
+            
+            for (const route of routes) {
+                try {
+                    const startTime = performance.now();
+                    const response = await fetch(route, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Cache-Control': 'no-cache'
+                        },
+                        credentials: 'include'
+                    });
+                    const endTime = performance.now();
+                    const responseTime = Math.round(endTime - startTime);
+                    
+                    const responseText = await response.text().catch(() => '(erro ao ler resposta)');
+                    
+                    results.push({
+                        route,
+                        status: response.status,
+                        statusText: response.statusText,
+                        responseTime,
+                        responseText: responseText.substring(0, 100) + (responseText.length > 100 ? '...' : '')
+                    });
+                } catch (error) {
+                    results.push({
+                        route,
+                        error: error.message
+                    });
+                }
+            }
+            
+            let html = '<table style="width:100%; border-collapse: collapse;">';
+            html += '<tr><th style="text-align:left; padding:8px; border:1px solid #ddd;">Rota</th><th style="text-align:left; padding:8px; border:1px solid #ddd;">Status</th><th style="text-align:left; padding:8px; border:1px solid #ddd;">Tempo</th><th style="text-align:left; padding:8px; border:1px solid #ddd;">Resposta</th></tr>';
+            
+            for (const result of results) {
+                const rowClass = result.error || result.status >= 400 ? 'error' : (result.status >= 200 && result.status < 300 ? 'success' : '');
+                html += `<tr class="${rowClass}">`;
+                html += `<td style="padding:8px; border:1px solid #ddd;">${escapeHtml(result.route)}</td>`;
+                if (result.error) {
+                    html += `<td colspan="3" style="padding:8px; border:1px solid #ddd;">Erro: ${escapeHtml(result.error)}</td>`;
+                } else {
+                    html += `<td style="padding:8px; border:1px solid #ddd;">${result.status} ${result.statusText}</td>`;
+                    html += `<td style="padding:8px; border:1px solid #ddd;">${result.responseTime}ms</td>`;
+                    html += `<td style="padding:8px; border:1px solid #ddd;">${escapeHtml(result.responseText)}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            html += '</table>';
+            resultElement.innerHTML = html;
+        }
+        
+        // Função para testar login com diferentes rotas
+        async function testLoginRoutes() {
+            const resultElement = document.getElementById('loginRoutesResult');
+            resultElement.innerHTML = 'Testando login com diferentes rotas...';
+            resultElement.className = 'result';
+            
+            const routes = [
+                '/api/auth/login',
+                '/auth/login',
+                window.location.origin + '/api/auth/login',
+                '/api/login',
+                '/login'
+            ];
+            
+            let results = [];
+            
+            for (const route of routes) {
+                try {
+                    const startTime = performance.now();
+                    const response = await fetch(route, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Cache-Control': 'no-cache'
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({ username: 'admin', password: 'admin' })
+                    });
+                    const endTime = performance.now();
+                    const responseTime = Math.round(endTime - startTime);
+                    
+                    const responseText = await response.text().catch(() => '(erro ao ler resposta)');
+                    
+                    results.push({
+                        route,
+                        status: response.status,
+                        statusText: response.statusText,
+                        responseTime,
+                        responseText: responseText.substring(0, 100) + (responseText.length > 100 ? '...' : '')
+                    });
+                } catch (error) {
+                    results.push({
+                        route,
+                        error: error.message
+                    });
+                }
+            }
+            
+            let html = '<table style="width:100%; border-collapse: collapse;">';
+            html += '<tr><th style="text-align:left; padding:8px; border:1px solid #ddd;">Rota</th><th style="text-align:left; padding:8px; border:1px solid #ddd;">Status</th><th style="text-align:left; padding:8px; border:1px solid #ddd;">Tempo</th><th style="text-align:left; padding:8px; border:1px solid #ddd;">Resposta</th></tr>';
+            
+            for (const result of results) {
+                const rowClass = result.error || result.status >= 400 ? 'error' : (result.status >= 200 && result.status < 300 ? 'success' : '');
+                html += `<tr class="${rowClass}">`;
+                html += `<td style="padding:8px; border:1px solid #ddd;">${escapeHtml(result.route)}</td>`;
+                if (result.error) {
+                    html += `<td colspan="3" style="padding:8px; border:1px solid #ddd;">Erro: ${escapeHtml(result.error)}</td>`;
+                } else {
+                    html += `<td style="padding:8px; border:1px solid #ddd;">${result.status} ${result.statusText}</td>`;
+                    html += `<td style="padding:8px; border:1px solid #ddd;">${result.responseTime}ms</td>`;
+                    html += `<td style="padding:8px; border:1px solid #ddd;">${escapeHtml(result.responseText)}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            html += '</table>';
+            resultElement.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

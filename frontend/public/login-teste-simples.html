@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Simples de Login - Render.com</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste Simples de Login no Render.com</h1>
+    
+    <div class="container">
+        <h2>Informações do Ambiente</h2>
+        <div id="environmentInfo" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>1. Teste de Conexão com a API</h2>
+        <p>Verifica se a API está acessível</p>
+        <button onclick="testConnection()">Testar Conexão</button>
+        <div id="connectionResult" class="result">Os resultados aparecerão aqui...</div>
+    </div>
+    
+    <div class="container">
+        <h2>2. Teste de Login</h2>
+        <p>Tenta fazer login com credenciais admin/admin</p>
+        <button onclick="testLogin()">Testar Login</button>
+        <button onclick="testLoginWithFullUrl()">Testar Login com URL Completa</button>
+        <div id="loginResult" class="result">Os resultados aparecerão aqui...</div>
+    </div>
+
+    <script>
+        // Função para escapar HTML e prevenir XSS
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        // Exibir informações do ambiente
+        document.addEventListener('DOMContentLoaded', function() {
+            const envInfo = document.getElementById('environmentInfo');
+            envInfo.innerHTML = `
+                <strong>URL:</strong> ${window.location.href}<br>
+                <strong>Origem:</strong> ${window.location.origin}<br>
+                <strong>Pathname:</strong> ${window.location.pathname}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                <strong>Data e Hora:</strong> ${new Date().toLocaleString()}<br>
+            `;
+        });
+        
+        // Função para testar a conexão com a API
+        async function testConnection() {
+            const resultElement = document.getElementById('connectionResult');
+            resultElement.innerHTML = 'Testando conexão...';
+            resultElement.className = 'result';
+            
+            try {
+                const startTime = performance.now();
+                const response = await fetch('/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                const responseText = await response.text();
+                let responseData;
+                let isJson = false;
+                
+                try {
+                    responseData = JSON.parse(responseText);
+                    isJson = true;
+                } catch (e) {
+                    // Não é JSON válido
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                resultElement.className = `result ${statusClass}`;
+                
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de Resposta:</strong> ${responseTime}ms<br>
+                        <strong>Headers:</strong><br>
+                        <pre>${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('\n')}</pre>
+                    </div>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Função para testar o login
+        async function testLogin() {
+            const resultElement = document.getElementById('loginResult');
+            resultElement.innerHTML = 'Testando login...';
+            resultElement.className = 'result';
+            
+            try {
+                console.log('Enviando requisição para: /api/auth/login');
+                
+                const startTime = performance.now();
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ username: 'admin', password: 'admin' })
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                console.log('Status da resposta:', response.status, response.statusText);
+                
+                // Verificar se a resposta está vazia antes de tentar fazer o parse
+                const responseText = await response.text();
+                console.log('Texto da resposta:', responseText);
+                
+                let responseData;
+                let isJson = false;
+                
+                if (responseText && responseText.trim() !== '') {
+                    try {
+                        responseData = JSON.parse(responseText);
+                        isJson = true;
+                        console.log('Dados recebidos:', JSON.stringify(responseData));
+                    } catch (parseError) {
+                        console.error('Erro ao fazer parse do JSON:', parseError);
+                    }
+                } else {
+                    console.warn('Resposta vazia do servidor');
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                resultElement.className = `result ${statusClass}`;
+                
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de Resposta:</strong> ${responseTime}ms<br>
+                        <strong>URL:</strong> /api/auth/login<br>
+                        <strong>Método:</strong> POST<br>
+                        <strong>Credenciais:</strong> same-origin<br>
+                        <strong>Headers:</strong><br>
+                        <pre>${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('\n')}</pre>
+                    </div>
+                    <strong>Corpo da Requisição:</strong><br>
+                    <pre>${escapeHtml(JSON.stringify({ username: 'admin', password: 'admin' }, null, 2))}</pre>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                console.error('Erro durante login:', error);
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // Função para testar o login com URL completa
+        async function testLoginWithFullUrl() {
+            const resultElement = document.getElementById('loginResult');
+            resultElement.innerHTML = 'Testando login com URL completa...';
+            resultElement.className = 'result';
+            
+            try {
+                // Usar a URL completa para o endpoint de login
+                const fullUrl = window.location.origin + '/api/auth/login';
+                console.log('URL completa:', fullUrl);
+                
+                const startTime = performance.now();
+                const response = await fetch(fullUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username: 'admin', password: 'admin' })
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                console.log('Status da resposta (URL completa):', response.status, response.statusText);
+                
+                const responseText = await response.text();
+                console.log('Texto da resposta (URL completa):', responseText);
+                
+                let responseData;
+                let isJson = false;
+                
+                if (responseText && responseText.trim() !== '') {
+                    try {
+                        responseData = JSON.parse(responseText);
+                        isJson = true;
+                    } catch (parseError) {
+                        console.error('Erro ao fazer parse do JSON (URL completa):', parseError);
+                    }
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                resultElement.className = `result ${statusClass}`;
+                
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>URL Completa:</strong> ${fullUrl}<br>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de Resposta:</strong> ${responseTime}ms<br>
+                        <strong>Headers:</strong><br>
+                        <pre>${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('\n')}</pre>
+                    </div>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                console.error('Erro durante login com URL completa:', error);
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Função para escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

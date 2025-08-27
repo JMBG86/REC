@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Login no Render.com</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        input {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        label {
+            font-weight: bold;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .debug-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Diagnóstico de Login no Render.com</h1>
+    <p>Esta página testa o login na API do Render.com e exibe informações detalhadas sobre o processo.</p>
+    
+    <div class="container">
+        <h2>1. Informações do Ambiente</h2>
+        <div id="environmentInfo" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>2. Teste de Conexão com a API</h2>
+        <div>
+            <label for="apiUrl">URL da API:</label>
+            <input type="text" id="apiUrl" value="/api" />
+        </div>
+        <button onclick="testConnection()">Testar Conexão</button>
+        <div id="connectionResult" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>3. Teste de Login</h2>
+        <div>
+            <label for="username">Usuário:</label>
+            <input type="text" id="username" value="admin" />
+        </div>
+        <div>
+            <label for="password">Senha:</label>
+            <input type="password" id="password" value="admin" />
+        </div>
+        <button onclick="testLogin()">Testar Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>4. Teste de Login com Fetch Direto</h2>
+        <button onclick="testDirectFetch()">Testar Fetch Direto</button>
+        <div id="directFetchResult" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>5. Teste de Login com XMLHttpRequest</h2>
+        <button onclick="testXHR()">Testar XMLHttpRequest</button>
+        <div id="xhrResult" class="result"></div>
+    </div>
+
+    <script>
+        // Função para escapar HTML e evitar XSS
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Exibir informações do ambiente
+        document.addEventListener('DOMContentLoaded', function() {
+            const envInfo = document.getElementById('environmentInfo');
+            envInfo.innerHTML = `
+                <strong>URL:</strong> ${window.location.href}<br>
+                <strong>Origem:</strong> ${window.location.origin}<br>
+                <strong>Pathname:</strong> ${window.location.pathname}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                <strong>Data e Hora:</strong> ${new Date().toLocaleString()}<br>
+            `;
+        });
+
+        // Função para testar a conexão com a API
+        async function testConnection() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const resultElement = document.getElementById('connectionResult');
+            resultElement.innerHTML = 'Testando conexão...';
+            resultElement.className = 'result';
+            
+            try {
+                const startTime = performance.now();
+                const response = await fetch(`${apiUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                const responseText = await response.text();
+                let responseData;
+                let isJson = false;
+                
+                try {
+                    responseData = JSON.parse(responseText);
+                    isJson = true;
+                } catch (e) {
+                    // Não é JSON válido
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                resultElement.className = `result ${statusClass}`;
+                
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de Resposta:</strong> ${responseTime}ms<br>
+                        <strong>Headers:</strong><br>
+                        <div class="debug-info">
+                            ${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('<br>')}
+                        </div>
+                    </div>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Função para testar o login
+        async function testLogin() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultElement = document.getElementById('loginResult');
+            
+            resultElement.innerHTML = 'Testando login...';
+            resultElement.className = 'result';
+            
+            try {
+                const startTime = performance.now();
+                
+                // Log para depuração
+                console.log('Enviando requisição para:', `${apiUrl}/auth/login`);
+                console.log('Dados:', { username, password });
+                
+                const response = await fetch(`${apiUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                console.log('Status da resposta:', response.status, response.statusText);
+                
+                // Verificar se a resposta está vazia antes de tentar fazer o parse
+                const responseText = await response.text();
+                console.log('Texto da resposta:', responseText);
+                
+                let responseData;
+                let isJson = false;
+                
+                if (responseText && responseText.trim() !== '') {
+                    try {
+                        responseData = JSON.parse(responseText);
+                        isJson = true;
+                        console.log('Dados recebidos:', JSON.stringify(responseData));
+                    } catch (parseError) {
+                        console.error('Erro ao fazer parse do JSON:', parseError);
+                    }
+                } else {
+                    console.warn('Resposta vazia do servidor');
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                resultElement.className = `result ${statusClass}`;
+                
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tempo de Resposta:</strong> ${responseTime}ms<br>
+                        <strong>URL:</strong> ${apiUrl}/auth/login<br>
+                        <strong>Método:</strong> POST<br>
+                        <strong>Credenciais:</strong> same-origin<br>
+                        <strong>Headers:</strong><br>
+                        <div class="debug-info">
+                            ${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('<br>')}
+                        </div>
+                    </div>
+                    <strong>Corpo da Requisição:</strong><br>
+                    <pre>${escapeHtml(JSON.stringify({ username, password }, null, 2))}</pre>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                console.error('Erro durante login:', error);
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Função para testar o login com fetch direto
+        async function testDirectFetch() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultElement = document.getElementById('directFetchResult');
+            
+            resultElement.innerHTML = 'Testando login com fetch direto...';
+            resultElement.className = 'result';
+            
+            try {
+                // Usar fetch diretamente com a URL completa
+                const fullUrl = window.location.origin + apiUrl + '/auth/login';
+                console.log('URL completa:', fullUrl);
+                
+                const response = await fetch(fullUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('Status da resposta (fetch direto):', response.status, response.statusText);
+                
+                const responseText = await response.text();
+                console.log('Texto da resposta (fetch direto):', responseText);
+                
+                let responseData;
+                let isJson = false;
+                
+                if (responseText && responseText.trim() !== '') {
+                    try {
+                        responseData = JSON.parse(responseText);
+                        isJson = true;
+                    } catch (parseError) {
+                        console.error('Erro ao fazer parse do JSON (fetch direto):', parseError);
+                    }
+                }
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                resultElement.className = `result ${statusClass}`;
+                
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>URL Completa:</strong> ${fullUrl}<br>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Headers:</strong><br>
+                        <div class="debug-info">
+                            ${Array.from(response.headers).map(([key, value]) => `${key}: ${value}`).join('<br>')}
+                        </div>
+                    </div>
+                    <strong>Resposta (Texto):</strong><br>
+                    <pre>${escapeHtml(responseText)}</pre>
+                    ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                `;
+            } catch (error) {
+                console.error('Erro durante fetch direto:', error);
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <pre>${escapeHtml(error.stack)}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Função para testar o login com XMLHttpRequest
+        function testXHR() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultElement = document.getElementById('xhrResult');
+            
+            resultElement.innerHTML = 'Testando login com XMLHttpRequest...';
+            resultElement.className = 'result';
+            
+            const xhr = new XMLHttpRequest();
+            const fullUrl = window.location.origin + apiUrl + '/auth/login';
+            
+            xhr.open('POST', fullUrl, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('Cache-Control', 'no-cache');
+            xhr.withCredentials = true;
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    console.log('Status da resposta (XHR):', xhr.status);
+                    console.log('Texto da resposta (XHR):', xhr.responseText);
+                    
+                    let responseData;
+                    let isJson = false;
+                    
+                    if (xhr.responseText && xhr.responseText.trim() !== '') {
+                        try {
+                            responseData = JSON.parse(xhr.responseText);
+                            isJson = true;
+                        } catch (parseError) {
+                            console.error('Erro ao fazer parse do JSON (XHR):', parseError);
+                        }
+                    }
+                    
+                    const statusClass = (xhr.status >= 200 && xhr.status < 300) ? 'success' : 'error';
+                    resultElement.className = `result ${statusClass}`;
+                    
+                    resultElement.innerHTML = `
+                        <div>
+                            <strong>URL Completa:</strong> ${fullUrl}<br>
+                            <strong>Status:</strong> ${xhr.status}<br>
+                            <strong>Headers:</strong><br>
+                            <div class="debug-info">
+                                ${xhr.getAllResponseHeaders().split('\r\n').filter(Boolean).join('<br>')}
+                            </div>
+                        </div>
+                        <strong>Resposta (Texto):</strong><br>
+                        <pre>${escapeHtml(xhr.responseText)}</pre>
+                        ${isJson ? `<strong>Resposta (JSON):</strong><br><pre>${escapeHtml(JSON.stringify(responseData, null, 2))}</pre>` : ''}
+                    `;
+                }
+            };
+            
+            xhr.onerror = function(error) {
+                console.error('Erro durante XHR:', error);
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+                    <div>
+                        <strong>Erro de Rede:</strong> Não foi possível completar a requisição<br>
+                        <strong>URL:</strong> ${fullUrl}<br>
+                    </div>
+                `;
+            };
+            
+            const data = JSON.stringify({ username, password });
+            xhr.send(data);
+        }
+    </script>
+</body>
+</html>

@@ -38,6 +38,11 @@ if [ ! -f "public/test-api-direct.html" ]; then
     fi
 fi
 
+# Copiar arquivos de teste para a pasta dist
+echo "Copiando arquivos de teste para a pasta dist..."
+chmod +x ./copy-test-files.sh
+./copy-test-files.sh
+
 echo "Verificando se o arquivo test-api-direct.html está no diretório dist..."
 if [ ! -f "dist/test-api-direct.html" ] && [ -f "public/test-api-direct.html" ]; then
     echo "Copiando test-api-direct.html do diretório public para o diretório dist..."

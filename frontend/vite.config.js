@@ -17,7 +17,8 @@ export default defineConfig(({ command, mode }) => ({
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        // Não reescrever o caminho, manter o prefixo /api
+        // rewrite: (path) => path.replace(/^\/api/, '')
       }
     },
     hmr: {
